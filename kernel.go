@@ -3,6 +3,7 @@ package winapi
 import (
 	"errors"
 	"syscall"
+	"unsafe"
 )
 
 var dll_kernel *syscall.LazyDLL = syscall.NewLazyDLL("kernel32.dll")
@@ -13,7 +14,7 @@ var (
 	procCreateFile      *syscall.LazyProc = dll_kernel.NewProc("CreateFileW")
 	procReadFile        *syscall.LazyProc = dll_kernel.NewProc("ReadFile")
 	procWriteFile       *syscall.LazyProc = dll_kernel.NewProc("WriteFile")
-	procSetFilePointer  *syscall.LazyProc = dll_kernel.NewProc("SetFilePointer")
+	procSetFilePointer  *syscall.LazyProc = dll_kernel.NewProc("SetFilePointerEx")
 	procGetModuleHandle *syscall.LazyProc = dll_kernel.NewProc("GetModuleHandleW")
 	procCloseHandle     *syscall.LazyProc = dll_kernel.NewProc("CloseHandle")
 )
@@ -53,6 +54,23 @@ func CloseHandle(h HANDLE) (err error) {
 	return
 }
 
-func SetFilePointer(hFile HANDLE, n int64) (NewPointer int64, err error) {
-	return 1, nil
+func SetFilePointer(hFile HANDLE,
+	DistanceToMove int64, MoveMethod uint32) (NewPointer int64, err error) {
+	var np int64
+	r1, _, e1 := syscall.Syscall6(procSetFilePointer.Addr(), 4,
+		uintptr(hFile),
+		uintptr(DistanceToMove),
+		uintptr(unsafe.Pointer(&np)),
+		uintptr(MoveMethod),
+		0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = errors.New("SetFilePointer -> 0")
+		}
+	} else {
+		NewPointer = np
+	}
+	return
 }

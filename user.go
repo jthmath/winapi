@@ -127,7 +127,7 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	return
 }
 
-// for MessageBox function
+// (NOTE): for MessageBox function
 const (
 	MB_OK                uint32 = 0x00000000
 	MB_OKCANCEL          uint32 = 0x00000001

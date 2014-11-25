@@ -25,6 +25,6 @@ type Overlapped struct {
 }
 
 type POINT struct {
-	x int32
-	y int32
+	X int32
+	Y int32
 }
