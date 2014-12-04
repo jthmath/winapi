@@ -22,6 +22,28 @@ var (
 	procDestroyWindow    *syscall.LazyProc = dll_user.NewProc("DestroyWindow")
 )
 
+const (
+	WM_NULL    uint32 = 0x0000
+	WM_CREATE  uint32 = 0x0001
+	WM_DESTROY uint32 = 0x0002
+	WM_MOVE    uint32 = 0x0003
+	WM_SIZE    uint32 = 0x0005
+
+	WM_ACTIVATE uint32 = 0x0006
+
+	/*
+	 * WM_ACTIVATE state values
+	 */
+	WA_INACTIVE    = 0
+	WA_ACTIVE      = 1
+	WA_CLICKACTIVE = 2
+
+	WM_CLOSE uint32 = 0x0010
+	WM_QUIT  uint32 = 0x0012
+
+	WM_GETMINMAXINFO uint32 = 0x0024
+)
+
 type MSG struct {
 	Hwnd    HWND
 	Message uint32
@@ -65,28 +87,6 @@ type _WNDCLASS struct {
 func newWndProc(proc WNDPROC) uintptr {
 	return syscall.NewCallback(proc)
 }
-
-const (
-	WM_NULL    uint32 = 0x0000
-	WM_CREATE  uint32 = 0x0001
-	WM_DESTROY uint32 = 0x0002
-	WM_MOVE    uint32 = 0x0003
-	WM_SIZE    uint32 = 0x0005
-
-	WM_ACTIVATE uint32 = 0x0006
-
-	/*
-	 * WM_ACTIVATE state values
-	 */
-	WA_INACTIVE    = 0
-	WA_ACTIVE      = 1
-	WA_CLICKACTIVE = 2
-
-	WM_CLOSE uint32 = 0x0010
-	WM_QUIT  uint32 = 0x0012
-
-	WM_GETMINMAXINFO uint32 = 0x0024
-)
 
 func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	if pWndClass == nil {

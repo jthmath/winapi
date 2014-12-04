@@ -2,7 +2,6 @@ package winapi
 
 type HANDLE uintptr
 type HWND uintptr
-type HKEY uintptr
 type HMENU uintptr
 type HINSTANCE uintptr
 type HMODULE HINSTANCE
@@ -28,3 +27,5 @@ type POINT struct {
 	X int32
 	Y int32
 }
+
+type ACCESS_MASK uint32
