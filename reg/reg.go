@@ -14,10 +14,12 @@ var (
 )
 
 var (
-	procRegCreateKeyEx *syscall.LazyProc = dll_Advapi.NewProc("RegCreateKeyExW")
-	procRegOpenKeyEx   *syscall.LazyProc = dll_Advapi.NewProc("RegRegOpenKeyExW")
-	procRegSetValueEx  *syscall.LazyProc = dll_Advapi.NewProc("RegSetValueExW")
-	procRegCloseKey    *syscall.LazyProc = dll_Advapi.NewProc("RegCloseKey")
+	procRegCreateKeyEx  *syscall.LazyProc = dll_Advapi.NewProc("RegCreateKeyExW")
+	procRegOpenKeyEx    *syscall.LazyProc = dll_Advapi.NewProc("RegRegOpenKeyExW")
+	procRegSetValueEx   *syscall.LazyProc = dll_Advapi.NewProc("RegSetValueExW")
+	procRegCloseKey     *syscall.LazyProc = dll_Advapi.NewProc("RegCloseKey")
+	procRegDeleteKeyEx  *syscall.LazyProc = dll_Advapi.NewProc("RegDeleteKeyExW")
+	procRegQueryValueEx *syscall.LazyProc = dll_Advapi.NewProc("RegQueryValueExW")
 )
 
 type HKEY uintptr
@@ -56,16 +58,18 @@ const (
 	REG_EXPAND_SZ uint32 = 2 // Unicode nul terminated string(with environment variable references)
 
 	REG_BINARY                     uint32 = 3  // Free form binary
-	REG_DWORD                      uint32 = 4  // 32-bit number
-	REG_DWORD_LITTLE_ENDIAN        uint32 = 4  // 32-bit number (same as REG_DWORD)
-	REG_DWORD_BIG_ENDIAN           uint32 = 5  // 32-bit number
+	REG_UINT32                     uint32 = 4  // 32-bit number
 	REG_LINK                       uint32 = 6  // Symbolic Link (unicode)
 	REG_MULTI_SZ                   uint32 = 7  // Multiple Unicode strings
 	REG_RESOURCE_LIST              uint32 = 8  // Resource list in the resource map
 	REG_FULL_RESOURCE_DESCRIPTOR   uint32 = 9  // Resource list in the hardware description
 	REG_RESOURCE_REQUIREMENTS_LIST uint32 = 10 //
-	REG_QWORD                      uint32 = 11 // 64-bit number
-	REG_QWORD_LITTLE_ENDIAN        uint32 = 11 // 64-bit number (same as REG_QWORD)
+	REG_UINT64                     uint32 = 11 // 64-bit number
+)
+
+const (
+	KEY_WOW64_32KEY REGSAM = 0x0200
+	KEY_WOW64_64KEY REGSAM = 0x0100
 )
 
 func CreateKey(hKey HKEY, SubKey string, Reserved uint32, Class string,
@@ -117,7 +121,7 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 	var cbData uint32
 	switch Data.(type) {
 	case uint32:
-		if Type != REG_DWORD {
+		if Type != REG_UINT32 {
 			return TypeError
 		} else {
 			r := winapi.Uint32ToBinLittleEndian(Data.(uint32))
@@ -125,7 +129,7 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 			cbData = 4
 		}
 	case uint64:
-		if Type != REG_QWORD {
+		if Type != REG_UINT64 {
 			return TypeError
 		} else {
 			r := winapi.Uint64ToBinLittleEndian(Data.(uint64))
@@ -135,6 +139,14 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 	case string:
 		if Type != REG_SZ {
 			return TypeError
+		} else {
+			str := Data.(string)
+			ustr, err := syscall.UTF16FromString(str)
+			if err != nil {
+				return err
+			}
+			pData = (*byte)(unsafe.Pointer(&ustr[0]))
+			cbData = uint32(len(ustr)) * 2
 		}
 	case []string:
 		if Type != REG_MULTI_SZ {
@@ -143,8 +155,7 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 	default:
 		return errors.New("SetValue不支持该类型")
 	}
-	err = _SetValue(Key, pValueName, Reserved, Type, pData, cbData)
-	return err
+	return _SetValue(Key, pValueName, Reserved, Type, pData, cbData)
 }
 
 func _SetValue(Key HKEY, ValueName *uint16, Reserved uint32,
@@ -174,7 +185,29 @@ func CloseKey(Key HKEY) (err error) {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = errors.New("failed to CloseKey")
+			err = errors.New("CloseKey failed.")
+		}
+	}
+	return
+}
+
+func DeleteKey(Key HKEY, SubKey string, samDesired REGSAM, Reserved uint32) (err error) {
+	pSubKey, err := syscall.UTF16PtrFromString(SubKey)
+	if err != nil {
+		return
+	}
+	r1, _, e1 := syscall.Syscall6(procRegSetValueEx.Addr(), 4,
+		uintptr(Key),
+		uintptr(unsafe.Pointer(pSubKey)),
+		uintptr(samDesired),
+		uintptr(Reserved),
+		0, 0)
+	n := int32(r1)
+	if n != ERROR_SUCCESS {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = errors.New("DeleteKey failed.")
 		}
 	}
 	return
