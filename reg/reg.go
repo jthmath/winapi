@@ -120,6 +120,14 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 	var pData *byte
 	var cbData uint32
 	switch Data.(type) {
+	case []byte:
+		if Type != REG_BINARY {
+			return TypeError
+		} else {
+			buf := Data.([]byte)
+			pData = &buf[0]
+			cbData = uint32(len(buf))
+		}
 	case uint32:
 		if Type != REG_UINT32 {
 			return TypeError
@@ -151,6 +159,20 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 	case []string:
 		if Type != REG_MULTI_SZ {
 			return TypeError
+		} else {
+			str := Data.([]string)
+			su := make([]uint16, 0)
+			for i := 0; i < len(str); i++ {
+				ustr, err := syscall.UTF16FromString(str[i])
+				if err != nil {
+					return err
+				} else {
+					su = winapi.Uint16SliceCat(su, ustr)
+				}
+			}
+			su = append(su, 0)
+			pData = (*byte)(unsafe.Pointer(&su[0]))
+			cbData = uint32(len(su)) * 2
 		}
 	default:
 		return errors.New("SetValue不支持该类型")
@@ -211,4 +233,26 @@ func DeleteKey(Key HKEY, SubKey string, samDesired REGSAM, Reserved uint32) (err
 		}
 	}
 	return
+}
+
+func QueryValue() error {
+	return nil
+}
+
+func _QueryValue(Key HKEY, ValueName *uint16, pType *uint32,
+	pData *byte, pcbData *uint32) error {
+	return nil
+	r1, _, _ := syscall.Syscall6(procRegQueryValueEx.Addr(), 6,
+		uintptr(Key),
+		uintptr(unsafe.Pointer(ValueName)),
+		uintptr(0),
+		uintptr(unsafe.Pointer(pType)),
+		uintptr(unsafe.Pointer(pData)),
+		uintptr(unsafe.Pointer(pcbData)))
+	n := int32(r1)
+	if n != ERROR_SUCCESS {
+		return errors.New("_QueryValue failed.")
+	} else {
+		return nil
+	}
 }

@@ -48,11 +48,16 @@ func UTF16FromMultiStrings(sl []string) ([]uint16, error) {
 
 // 拼接两个Unicode字符串
 //
-func Uint16SliceCat(a []uint16, b []uint16) (r []uint16, err error) {
-	L := len(b)
-	r = a
+func Uint16SliceCat(a []uint16, b []uint16) []uint16 {
+	var L int = 0
+	s := make([]uint16, 0)
+	L = len(a)
 	for i := 0; i < L; i++ {
-		r = append(r, b[i])
+		s = append(s, a[i])
 	}
-	return
+	L = len(b)
+	for i := 0; i < L; i++ {
+		s = append(s, b[i])
+	}
+	return s
 }

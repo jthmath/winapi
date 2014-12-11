@@ -1,7 +1,7 @@
 package winapi
 
 import (
-	"fmt"
+	"errors"
 	"syscall"
 	"unsafe"
 )
@@ -119,7 +119,7 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = fmt.Errorf("RegisterClass -> n")
+			err = errors.New("RegisterClass failed.")
 		}
 	} else {
 		atom = n
@@ -159,7 +159,7 @@ func MessageBox(hWnd HWND, Text string, Caption string, Type uint32) (ret int32,
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = fmt.Errorf("MessageBox -> %d", n)
+			err = errors.New("MessageBox failed.")
 		}
 	} else {
 		ret = n
@@ -172,7 +172,7 @@ func DefWindowProc(hWnd HWND, message uint32, wParam uintptr, lParam uintptr) ui
 	return ret
 }
 
-const CW_USEDEFAULT int32 = -2147483648 // 0x80000000
+const CW_USEDEFAULT int32 = ^int32(0x7FFFFFFF) // 0x80000000
 
 func CreateWindow(ClassName string, WindowName string, Style uint32, ExStyle uint32,
 	X int32, Y int32, Width int32, Height int32,
@@ -193,7 +193,7 @@ func CreateWindow(ClassName string, WindowName string, Style uint32, ExStyle uin
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = fmt.Errorf("CreateWindow -> %d", r1)
+			err = errors.New("CreateWindow failed.")
 		}
 	} else {
 		hWnd = HWND(r1)
@@ -219,19 +219,31 @@ const (
 	SW_MAX             int32 = 11
 )
 
-func ShowWindow(hWnd HWND, CmdShow int32) bool {
+func ShowWindow(hWnd HWND, CmdShow int32) error {
 	r1, _, _ := syscall.Syscall(procShowWindow.Addr(), 2, uintptr(hWnd), uintptr(CmdShow), 0)
-	return r1 != 0
+	if r1 == 0 {
+		return errors.New("CreateWindow failed.")
+	} else {
+		return nil
+	}
 }
 
-func UpdateWindow(hWnd HWND) bool {
+func UpdateWindow(hWnd HWND) error {
 	r1, _, _ := syscall.Syscall(procUpdateWindow.Addr(), 1, uintptr(hWnd), 0, 0)
-	return r1 != 0
+	if r1 == 0 {
+		return errors.New("UpdateWindow failed.")
+	} else {
+		return nil
+	}
 }
 
-func TranslateMessage(pMsg *MSG) bool {
+func TranslateMessage(pMsg *MSG) error {
 	r1, _, _ := syscall.Syscall(procTranslateMessage.Addr(), 1, uintptr(unsafe.Pointer(pMsg)), 0, 0)
-	return r1 != 0
+	if r1 == 0 {
+		return errors.New("TranslateMessage failed.")
+	} else {
+		return nil
+	}
 }
 
 func DispatchMessage(pMsg *MSG) uintptr {
@@ -249,7 +261,7 @@ func DestroyWindow(hWnd HWND) (err error) {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = fmt.Errorf("DestroyWindow -> %d", n)
+			err = errors.New("DestroyWindow failed.")
 		}
 	}
 	return
