@@ -167,7 +167,7 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 				if err != nil {
 					return err
 				} else {
-					su = winapi.Uint16SliceCat(su, ustr)
+					su = append(su, ustr...)
 				}
 			}
 			su = append(su, 0)
@@ -235,13 +235,103 @@ func DeleteKey(Key HKEY, SubKey string, samDesired REGSAM, Reserved uint32) (err
 	return
 }
 
-func QueryValue() error {
-	return nil
+func QueryValue(Key HKEY, ValueName string) (Type uint32, Data interface{}, err error) {
+	pValueName, err := syscall.UTF16PtrFromString(ValueName)
+	if err != nil {
+		return
+	}
+	var dwType uint32
+	var dwSize uint32
+	err = _QueryValue(Key, pValueName, &dwType, nil, &dwSize)
+	if err != nil {
+		return
+	}
+	switch dwType {
+	case REG_BINARY:
+		sb := make([]byte, dwSize)
+		err = _QueryValue(Key, pValueName, &dwType, &sb[0], &dwSize)
+		if err != nil {
+			return
+		} else {
+			Data = sb
+		}
+	case REG_SZ:
+		buf := make([]uint16, (dwSize+1)/2)
+		err = _QueryValue(Key, pValueName, &dwType, (*byte)(unsafe.Pointer(&buf[0])), &dwSize)
+		if err != nil {
+			return
+		} else {
+			Data = syscall.UTF16ToString(buf)
+		}
+	case REG_MULTI_SZ:
+		L := int(dwSize / 2)
+		if L < 1 {
+			panic(L)
+		}
+		buf := make([]uint16, L)
+		err = _QueryValue(Key, pValueName, &dwType, (*byte)(unsafe.Pointer(&buf[0])), &dwSize)
+		if err != nil {
+			return
+		} else {
+			if L == 1 {
+				if buf[0] != 0 {
+					err = errors.New("QueryValue函数，查询到数据大小为2但")
+					return
+				} else {
+					Data = []string{}
+					break
+				}
+			} else {
+				// L > 1
+				ss := make([]string, 0)
+				ssHelper := buf
+				k := 0
+				for i := 0; i < L-1; i++ {
+					if buf[i] == 0 {
+						if buf[i+1] != 0 {
+							ssHelper = buf[k : i+1]
+							ss = append(ss, syscall.UTF16ToString(ssHelper))
+							k = i + 1
+						} else {
+							break
+						}
+					}
+				}
+				for i := 0; i < len(ss); i++ {
+					if ss[i] == "" {
+						err = errors.New("多字符串类型不允许出现空字符串")
+						return
+					}
+				}
+				Data = ss
+			}
+		}
+	case REG_UINT32:
+		var buf [4]byte
+		err = _QueryValue(Key, pValueName, &dwType, &buf[0], &dwSize)
+		if err != nil {
+			return
+		} else {
+			Data = winapi.ByteArrayToUint32LittleEndian(buf)
+		}
+	case REG_UINT64:
+		var buf [8]byte
+		err = _QueryValue(Key, pValueName, &dwType, &buf[0], &dwSize)
+		if err != nil {
+			return
+		} else {
+			Data = winapi.ByteArrayToUint64LittleEndian(buf)
+		}
+	default:
+		err = errors.New("不支持的类型")
+		return
+	}
+	Type = dwType
+	return
 }
 
 func _QueryValue(Key HKEY, ValueName *uint16, pType *uint32,
 	pData *byte, pcbData *uint32) error {
-	return nil
 	r1, _, _ := syscall.Syscall6(procRegQueryValueEx.Addr(), 6,
 		uintptr(Key),
 		uintptr(unsafe.Pointer(ValueName)),

@@ -20,6 +20,18 @@ func Uint32ToBinLittleEndian(n uint32) (r [4]byte) {
 	return
 }
 
+func ByteArrayToUint32LittleEndian(b [4]byte) uint32 {
+	return uint32(b[0]) + uint32(b[1])<<8 + uint32(b[2])<<16 + uint32(b[3])<<24
+}
+
+func ByteArrayToUint64LittleEndian(b [8]byte) uint64 {
+	var n uint64
+	for i := uint(0); i < 8; i++ {
+		n += uint64(b[i]) << (8 * i)
+	}
+	return n
+}
+
 func Uint64ToBinLittleEndian(n uint64) (r [8]byte) {
 	r[0] = byte(n)
 	r[1] = byte(n >> 8)
@@ -44,20 +56,4 @@ func UTF16FromMultiStrings(sl []string) ([]uint16, error) {
 		}
 	}
 	return []uint16{}, nil
-}
-
-// 拼接两个Unicode字符串
-//
-func Uint16SliceCat(a []uint16, b []uint16) []uint16 {
-	var L int = 0
-	s := make([]uint16, 0)
-	L = len(a)
-	for i := 0; i < L; i++ {
-		s = append(s, a[i])
-	}
-	L = len(b)
-	for i := 0; i < L; i++ {
-		s = append(s, b[i])
-	}
-	return s
 }
