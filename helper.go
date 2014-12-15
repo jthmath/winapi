@@ -1,6 +1,7 @@
 package winapi
 
 import (
+	"errors"
 	"syscall"
 )
 
@@ -56,4 +57,53 @@ func UTF16FromMultiStrings(sl []string) ([]uint16, error) {
 		}
 	}
 	return []uint16{}, nil
+}
+
+func UTF16ToMultiString(u []uint16) (sl []string, err error) {
+	CommonErrorString := "winapi.ParseMultiSz function: "
+	if u == nil {
+		err = errors.New(CommonErrorString + "the param u can not be nil.")
+		return
+	}
+	Len := len(u)
+	if Len <= 0 || Len == 2 {
+		err = errors.New(CommonErrorString + "len(u) can not be 0 or 2.")
+		return
+	} else if Len == 1 {
+		if u[0] != 0 {
+			err = errors.New(CommonErrorString + "if len(u) is 1, u[0] must be 0.")
+			return
+		} else {
+			return []string{}, nil
+		}
+	} else {
+		if u[0] == 0 {
+			err = errors.New(CommonErrorString + "find empty string.")
+			return
+		}
+	}
+
+	// now, len(u) >= 3.
+	sa := make([]string, 0)
+	var i int = 0
+	var j int = 0
+	for i := 1; i < Len-1; i++ {
+		if u[i] == 0 {
+			str := syscall.UTF16ToString(u[j:i])
+			j = i + 1
+			sa = append(sa, str)
+			if u[i+1] == 0 {
+				break
+			}
+		}
+	}
+	if i >= Len-1 {
+		err = errors.New(CommonErrorString + "can't find \\0\\0 as end.")
+		return
+	}
+
+	sl = make([]string, len(sa))
+	copy(sl, sa)
+
+	return
 }

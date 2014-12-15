@@ -256,7 +256,11 @@ func QueryValue(Key HKEY, ValueName string) (Type uint32, Data interface{}, err 
 			Data = sb
 		}
 	case REG_SZ:
-		buf := make([]uint16, (dwSize+1)/2)
+		if dwSize == 0 || dwSize%2 != 0 {
+			err = errors.New("dwSize必须是正偶数")
+			return
+		}
+		buf := make([]uint16, dwSize/2)
 		err = _QueryValue(Key, pValueName, &dwType, (*byte)(unsafe.Pointer(&buf[0])), &dwSize)
 		if err != nil {
 			return
@@ -264,45 +268,20 @@ func QueryValue(Key HKEY, ValueName string) (Type uint32, Data interface{}, err 
 			Data = syscall.UTF16ToString(buf)
 		}
 	case REG_MULTI_SZ:
-		L := int(dwSize / 2)
-		if L < 1 {
-			panic(L)
+		if dwSize == 0 || dwSize%2 != 0 {
+			err = errors.New("dwSize必须是正偶数")
+			return
 		}
-		buf := make([]uint16, L)
+		buf := make([]uint16, dwSize/2)
 		err = _QueryValue(Key, pValueName, &dwType, (*byte)(unsafe.Pointer(&buf[0])), &dwSize)
 		if err != nil {
 			return
 		} else {
-			if L == 1 {
-				if buf[0] != 0 {
-					err = errors.New("QueryValue函数，查询到数据大小为2但")
-					return
-				} else {
-					Data = []string{}
-					break
-				}
+			ss, uerr := winapi.UTF16ToMultiString(buf)
+			if uerr != nil {
+				err = uerr
+				return
 			} else {
-				// L > 1
-				ss := make([]string, 0)
-				ssHelper := buf
-				k := 0
-				for i := 0; i < L-1; i++ {
-					if buf[i] == 0 {
-						if buf[i+1] != 0 {
-							ssHelper = buf[k : i+1]
-							ss = append(ss, syscall.UTF16ToString(ssHelper))
-							k = i + 1
-						} else {
-							break
-						}
-					}
-				}
-				for i := 0; i < len(ss); i++ {
-					if ss[i] == "" {
-						err = errors.New("多字符串类型不允许出现空字符串")
-						return
-					}
-				}
 				Data = ss
 			}
 		}
