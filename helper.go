@@ -13,14 +13,6 @@ func SpecUTF16PtrFromString(s string) (*uint16, error) {
 	}
 }
 
-func Uint32ToBinLittleEndian(n uint32) (r [4]byte) {
-	r[0] = byte(n)
-	r[1] = byte(n >> 8)
-	r[2] = byte(n >> 16)
-	r[3] = byte(n >> 24)
-	return
-}
-
 func ByteArrayToUint32LittleEndian(b [4]byte) uint32 {
 	return uint32(b[0]) + uint32(b[1])<<8 + uint32(b[2])<<16 + uint32(b[3])<<24
 }
@@ -28,12 +20,20 @@ func ByteArrayToUint32LittleEndian(b [4]byte) uint32 {
 func ByteArrayToUint64LittleEndian(b [8]byte) uint64 {
 	var n uint64
 	for i := uint(0); i < 8; i++ {
-		n += uint64(b[i]) << (8 * i)
+		n += (uint64(b[i]) << (8 * i))
 	}
 	return n
 }
 
-func Uint64ToBinLittleEndian(n uint64) (r [8]byte) {
+func Uint32ToByteArrayLittleEndian(n uint32) (r [4]byte) {
+	r[0] = byte(n)
+	r[1] = byte(n >> 8)
+	r[2] = byte(n >> 16)
+	r[3] = byte(n >> 24)
+	return
+}
+
+func Uint64ToByteArrayLittleEndian(n uint64) (r [8]byte) {
 	r[0] = byte(n)
 	r[1] = byte(n >> 8)
 	r[2] = byte(n >> 16)
@@ -106,4 +106,12 @@ func UTF16ToMultiString(u []uint16) (sl []string, err error) {
 	copy(sl, sa)
 
 	return
+}
+
+func MAKEINTRESOURCE(id uint16) uintptr {
+	return uintptr(id)
+}
+
+func MakeIntResource(id uint16) uintptr {
+	return uintptr(id)
 }

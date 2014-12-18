@@ -132,7 +132,7 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 		if Type != REG_UINT32 {
 			return TypeError
 		} else {
-			r := winapi.Uint32ToBinLittleEndian(Data.(uint32))
+			r := winapi.Uint32ToByteArrayLittleEndian(Data.(uint32))
 			pData = &r[0]
 			cbData = 4
 		}
@@ -140,7 +140,7 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 		if Type != REG_UINT64 {
 			return TypeError
 		} else {
-			r := winapi.Uint64ToBinLittleEndian(Data.(uint64))
+			r := winapi.Uint64ToByteArrayLittleEndian(Data.(uint64))
 			pData = &r[0]
 			cbData = 8
 		}

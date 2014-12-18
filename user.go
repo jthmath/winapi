@@ -137,6 +137,8 @@ const (
 	MB_RETRYCANCEL       uint32 = 0x00000005
 	MB_CANCELTRYCONTINUE uint32 = 0x00000006
 	MB_HELP              uint32 = 0x00004000
+
+	MB_ICONERROR uint32 = 0x00000010
 )
 
 func MessageBox(hWnd HWND, Text string, Caption string, Type uint32) (ret int32, err error) {
@@ -165,6 +167,16 @@ func MessageBox(hWnd HWND, Text string, Caption string, Type uint32) (ret int32,
 		ret = n
 	}
 	return
+}
+
+func ErrorBox(err error) error {
+	var e error
+	if err == nil {
+		_, e = MessageBox(0, "<nil>", "error", MB_OK)
+	} else {
+		_, e = MessageBox(0, err.Error(), "error", MB_OK|MB_ICONERROR)
+	}
+	return e
 }
 
 func DefWindowProc(hWnd HWND, message uint32, wParam uintptr, lParam uintptr) uintptr {
