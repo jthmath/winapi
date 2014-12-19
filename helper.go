@@ -115,3 +115,7 @@ func MAKEINTRESOURCE(id uint16) uintptr {
 func MakeIntResource(id uint16) uintptr {
 	return uintptr(id)
 }
+
+func IS_INTRESOURCE(r uintptr) bool {
+	return (r >> 16) == 0
+}

@@ -34,12 +34,23 @@ const (
 	FILE_END     uint32 = 2
 )
 
-func GetModuleHandle(ModuleName string) HMODULE {
-	var r1 uintptr
-	if ModuleName == "" {
-		r1, _, _ = syscall.Syscall(procGetModuleHandle.Addr(), 1, 0, 0, 0)
+func GetModuleHandle(ModuleName string) (h HINSTANCE, err error) {
+	pStr, err := SpecUTF16PtrFromString(ModuleName)
+	if err != nil {
+		return
 	}
-	return HMODULE(r1)
+	r1, _, e1 := syscall.Syscall(procGetModuleHandle.Addr(), 1,
+		uintptr(unsafe.Pointer(pStr)), 0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = errors.New("GetModuleHandle failed.")
+		}
+	} else {
+		h = HINSTANCE(r1)
+	}
+	return
 }
 
 func CloseHandle(h HANDLE) (err error) {
@@ -48,7 +59,7 @@ func CloseHandle(h HANDLE) (err error) {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = errors.New("CloseHandle -> 0")
+			err = errors.New("CloseHandle failed.")
 		}
 	}
 	return
