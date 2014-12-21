@@ -9,15 +9,17 @@ import (
 var (
 	dll_gdi *syscall.LazyDLL = syscall.NewLazyDLL("gdi32.dll")
 
-	procBitBlt              *syscall.LazyProc = dll_gdi.NewProc("BitBlt")
-	procDeleteObject        *syscall.LazyProc = dll_gdi.NewProc("DeleteObject")
-	procGetObject           *syscall.LazyProc = dll_gdi.NewProc("GetObject")
-	procBeginPaint          *syscall.LazyProc = dll_gdi.NewProc("BeginPaint")
-	procEndPaint            *syscall.LazyProc = dll_gdi.NewProc("EndPaint")
-	procCreateCompatiableDC *syscall.LazyProc = dll_gdi.NewProc("CreateCompatiableDC")
-	procSelectObject        *syscall.LazyProc = dll_gdi.NewProc("SelectObject")
-	procDeleteDC            *syscall.LazyProc = dll_gdi.NewProc("DeleteDC")
+	procBitBlt             *syscall.LazyProc = dll_gdi.NewProc("BitBlt")
+	procDeleteObject       *syscall.LazyProc = dll_gdi.NewProc("DeleteObject")
+	procGetObject          *syscall.LazyProc = dll_gdi.NewProc("GetObject")
+	procBeginPaint         *syscall.LazyProc = dll_gdi.NewProc("BeginPaint")
+	procEndPaint           *syscall.LazyProc = dll_gdi.NewProc("EndPaint")
+	procCreateCompatibleDC *syscall.LazyProc = dll_gdi.NewProc("CreateCompatibleDC")
+	procSelectObject       *syscall.LazyProc = dll_gdi.NewProc("SelectObject")
+	procDeleteDC           *syscall.LazyProc = dll_gdi.NewProc("DeleteDC")
 )
+
+const HGDI_ERROR HGDIOBJ = HGDIOBJ(^uintptr(0))
 
 /*
 
@@ -128,4 +130,40 @@ func BeginPaint(hWnd HWND, ps *PaintStruct) (hdc HDC, err error) {
 func EndPaint(hWnd HWND, ps *PaintStruct) {
 	syscall.Syscall(procEndPaint.Addr(), 2,
 		uintptr(hWnd), uintptr(unsafe.Pointer(ps)), 0)
+}
+
+func CreateCompatibleDC(dc HDC) (HDC, error) {
+	r1, _, _ := syscall.Syscall(procCreateCompatibleDC.Addr(), 1, uintptr(dc), 0, 0)
+	if r1 == 0 {
+		return 0, errors.New("CreateCompatibleDC failed.")
+	} else {
+		return HDC(r1), nil
+	}
+}
+
+/*
+HGDIOBJ SelectObject(
+  _In_  HDC hdc,
+  _In_  HGDIOBJ hgdiobj
+);
+*/
+func SelectObject(hdc HDC, hgdiobj HGDIOBJ) (robj HGDIOBJ, err error) {
+	r1, _, _ := syscall.Syscall(procSelectObject.Addr(), 2, uintptr(hdc), uintptr(hgdiobj), 0)
+	if r1 == 0 {
+		err = errors.New("An error occurs and the selected object is not a region.")
+	} else if HGDIOBJ(r1) == HGDI_ERROR {
+		err = errors.New("SelectObject failed.")
+	} else {
+		robj = HGDIOBJ(r1)
+	}
+	return
+}
+
+func DeleteDC(dc HDC) error {
+	r1, _, _ := syscall.Syscall(procDeleteDC.Addr(), 1, uintptr(dc), 0, 0)
+	if r1 == 0 {
+		return errors.New("DeleteDC failed.")
+	} else {
+		return nil
+	}
 }
