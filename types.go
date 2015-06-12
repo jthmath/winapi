@@ -1,10 +1,18 @@
+// +build windows
+
 package winapi
 
 type HANDLE uintptr
+
+type __HWND struct {
+	unused int
+}
+
 type HWND uintptr
+
 type HMENU uintptr
 type HINSTANCE uintptr
-type HMODULE HINSTANCE
+type HMODULE uintptr
 
 type HGDIOBJ uintptr
 type HDC uintptr

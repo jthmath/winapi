@@ -1,22 +1,11 @@
+﻿// +build windows
+
 package winapi
 
 import (
 	"errors"
 	"syscall"
 	"unsafe"
-)
-
-var dll_kernel *syscall.LazyDLL = syscall.NewLazyDLL("kernel32.dll")
-
-var (
-	procGetLastError    *syscall.LazyProc = dll_kernel.NewProc("GetLastError")
-	procExitProcess     *syscall.LazyProc = dll_kernel.NewProc("ExitProcess")
-	procCreateFile      *syscall.LazyProc = dll_kernel.NewProc("CreateFileW")
-	procReadFile        *syscall.LazyProc = dll_kernel.NewProc("ReadFile")
-	procWriteFile       *syscall.LazyProc = dll_kernel.NewProc("WriteFile")
-	procSetFilePointer  *syscall.LazyProc = dll_kernel.NewProc("SetFilePointerEx")
-	procGetModuleHandle *syscall.LazyProc = dll_kernel.NewProc("GetModuleHandleW")
-	procCloseHandle     *syscall.LazyProc = dll_kernel.NewProc("CloseHandle")
 )
 
 func GetLastError() uint32 {

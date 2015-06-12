@@ -6,19 +6,6 @@ import (
 	"unsafe"
 )
 
-var (
-	dll_gdi *syscall.LazyDLL = syscall.NewLazyDLL("gdi32.dll")
-
-	procBitBlt             *syscall.LazyProc = dll_gdi.NewProc("BitBlt")
-	procDeleteObject       *syscall.LazyProc = dll_gdi.NewProc("DeleteObject")
-	procGetObject          *syscall.LazyProc = dll_gdi.NewProc("GetObject")
-	procBeginPaint         *syscall.LazyProc = dll_gdi.NewProc("BeginPaint")
-	procEndPaint           *syscall.LazyProc = dll_gdi.NewProc("EndPaint")
-	procCreateCompatibleDC *syscall.LazyProc = dll_gdi.NewProc("CreateCompatibleDC")
-	procSelectObject       *syscall.LazyProc = dll_gdi.NewProc("SelectObject")
-	procDeleteDC           *syscall.LazyProc = dll_gdi.NewProc("DeleteDC")
-)
-
 const HGDI_ERROR HGDIOBJ = HGDIOBJ(^uintptr(0))
 
 /*

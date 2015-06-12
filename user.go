@@ -6,25 +6,6 @@ import (
 	"unsafe"
 )
 
-var (
-	dll_user *syscall.LazyDLL = syscall.NewLazyDLL("user32.dll")
-
-	procDefWindowProc    *syscall.LazyProc = dll_user.NewProc("DefWindowProcW")
-	procGetMessage       *syscall.LazyProc = dll_user.NewProc("GetMessageW")
-	procRegisterClass    *syscall.LazyProc = dll_user.NewProc("RegisterClassExW")
-	procMessageBox       *syscall.LazyProc = dll_user.NewProc("MessageBoxW")
-	procCreateWindow     *syscall.LazyProc = dll_user.NewProc("CreateWindowExW")
-	procShowWindow       *syscall.LazyProc = dll_user.NewProc("ShowWindow")
-	procUpdateWindow     *syscall.LazyProc = dll_user.NewProc("UpdateWindow")
-	procTranslateMessage *syscall.LazyProc = dll_user.NewProc("TranslateMessage")
-	procDispatchMessage  *syscall.LazyProc = dll_user.NewProc("DispatchMessageW")
-	procPostQuitMessage  *syscall.LazyProc = dll_user.NewProc("PostQuitMessage")
-	procDestroyWindow    *syscall.LazyProc = dll_user.NewProc("DestroyWindow")
-	procLoadString       *syscall.LazyProc = dll_user.NewProc("LoadStringW")
-	procLoadIcon         *syscall.LazyProc = dll_user.NewProc("LoadIconW")
-	procLoadImage        *syscall.LazyProc = dll_user.NewProc("LoadImageW")
-)
-
 const (
 	WM_NULL    uint32 = 0x0000
 	WM_CREATE  uint32 = 0x0001
@@ -47,6 +28,8 @@ const (
 	WM_QUIT  uint32 = 0x0012
 
 	WM_GETMINMAXINFO uint32 = 0x0024
+
+	WM_COMMAND uint32 = 0x0111
 )
 
 type MSG struct {
@@ -113,11 +96,11 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	if pWndClass == nil {
 		return 0, error(syscall.EINVAL)
 	}
-	_pMenuName, err := syscall.UTF16PtrFromString(pWndClass.PszMenuName)
+	_pMenuName, err := SpecUTF16PtrFromString(pWndClass.PszMenuName)
 	if err != nil {
 		return
 	}
-	_pClassName, err := syscall.UTF16PtrFromString(pWndClass.PszClassName)
+	_pClassName, err := SpecUTF16PtrFromString(pWndClass.PszClassName)
 	if err != nil {
 		return
 	}
@@ -137,10 +120,11 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	r1, _, e1 := syscall.Syscall(procRegisterClass.Addr(), 1, uintptr(unsafe.Pointer(&wc)), 0, 0)
 	n := uint16(r1)
 	if n == 0 {
-		if e1 != 0 {
-			err = error(e1)
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			err = wec
 		} else {
-			err = errors.New("RegisterClass failed.")
+			err = errors.New("winapi: RegisterClass failed.")
 		}
 	} else {
 		atom = n
@@ -180,7 +164,7 @@ func MessageBox(hWnd HWND, Text string, Caption string, Type uint32) (ret int32,
 	n := int32(r1)
 	if n == 0 {
 		if e1 != 0 {
-			err = error(e1)
+			err = error(WinErrorCode(e1))
 		} else {
 			err = errors.New("MessageBox failed.")
 		}
@@ -359,13 +343,55 @@ func LoadIconByName(hinst HINSTANCE, name string) (icon HICON, err error) {
 	r1, _, e1 := syscall.Syscall(procLoadIcon.Addr(), 2,
 		uintptr(hinst), uintptr(unsafe.Pointer(pName)), 0)
 	if r1 == 0 {
-		if e1 != 0 {
-			err = error(e1)
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			err = wec
 		} else {
 			err = errors.New("LoadIconByName failed.")
 		}
 	} else {
 		icon = HICON(r1)
+	}
+	return
+}
+
+const (
+	IDC_ARROW = 32512
+)
+
+func LoadCursorById(hinst HINSTANCE, id uint16) (cursor HCURSOR, err error) {
+	r1, _, e1 := syscall.Syscall(procLoadCursor.Addr(), 2,
+		uintptr(hinst), MakeIntResource(id), 0)
+	if r1 == 0 {
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			err = wec
+		} else {
+			err = errors.New("winapi: LoadCursorById failed.")
+		}
+	} else {
+		cursor = HCURSOR(r1)
+	}
+	return
+}
+
+func LoadCursorByName(hinst HINSTANCE, name string) (cursor HCURSOR, err error) {
+	pName, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return
+	}
+
+	r1, _, e1 := syscall.Syscall(procLoadCursor.Addr(), 2,
+		uintptr(hinst), uintptr(unsafe.Pointer(pName)), 0)
+	if r1 == 0 {
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			err = wec
+		} else {
+			err = errors.New("winapi: LoadCursorByName failed.")
+		}
+	} else {
+		cursor = HCURSOR(r1)
 	}
 	return
 }
@@ -377,15 +403,15 @@ const ( // LoadImage函数的uType参数
 )
 
 const ( // LoadImage函数的fuLoad参数
-	LR_CREATEDIBSECTION uint32 = 0x00002000
-	LR_DEFAULTCOLOR     uint32 = 0x00000000
-	LR_DEFAULTSIZE      uint32 = 0x00000040
-	LR_LOADFROMFILE     uint32 = 0x00000010
-	LR_LOADMAP3DCOLORS  uint32 = 0x00001000
-	LR_LOADTRANSPARENT  uint32 = 0x00000020
-	LR_MONOCHROME       uint32 = 0x00000001
-	LR_SHARED           uint32 = 0x00008000
-	LR_VGACOLOR         uint32 = 0x00000080
+	LR_CREATEDIBSECTION = 0x00002000
+	LR_DEFAULTCOLOR     = 0x00000000
+	LR_DEFAULTSIZE      = 0x00000040
+	LR_LOADFROMFILE     = 0x00000010
+	LR_LOADMAP3DCOLORS  = 0x00001000
+	LR_LOADTRANSPARENT  = 0x00000020
+	LR_MONOCHROME       = 0x00000001
+	LR_SHARED           = 0x00008000
+	LR_VGACOLOR         = 0x00000080
 )
 
 /*

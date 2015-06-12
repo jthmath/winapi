@@ -108,14 +108,18 @@ func UTF16ToMultiString(u []uint16) (sl []string, err error) {
 	return
 }
 
-func MAKEINTRESOURCE(id uint16) uintptr {
-	return uintptr(id)
-}
-
 func MakeIntResource(id uint16) uintptr {
 	return uintptr(id)
 }
 
 func IS_INTRESOURCE(r uintptr) bool {
 	return (r >> 16) == 0
+}
+
+func LoWord(a uint32) uint16 {
+	return uint16(a & 0xFFFF)
+}
+
+func HiWord(a uint32) uint16 {
+	return uint16((a >> 16) & 0xFFFF)
 }
