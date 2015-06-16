@@ -1,3 +1,9 @@
+// +build windows
+
+/*
+此文件包含 user32.dll 中的函数，其中，关于【消息】的另放在 message.go 中
+*/
+
 package winapi
 
 import (
@@ -5,41 +11,6 @@ import (
 	"syscall"
 	"unsafe"
 )
-
-const (
-	WM_NULL    uint32 = 0x0000
-	WM_CREATE  uint32 = 0x0001
-	WM_DESTROY uint32 = 0x0002
-	WM_MOVE    uint32 = 0x0003
-	WM_SIZE    uint32 = 0x0005
-
-	WM_ACTIVATE uint32 = 0x0006
-
-	WM_PAINT uint32 = 0x000F
-
-	/*
-	 * WM_ACTIVATE state values
-	 */
-	WA_INACTIVE    = 0
-	WA_ACTIVE      = 1
-	WA_CLICKACTIVE = 2
-
-	WM_CLOSE uint32 = 0x0010
-	WM_QUIT  uint32 = 0x0012
-
-	WM_GETMINMAXINFO uint32 = 0x0024
-
-	WM_COMMAND uint32 = 0x0111
-)
-
-type MSG struct {
-	Hwnd    HWND
-	Message uint32
-	WParam  uintptr
-	LParam  uintptr
-	Time    uint32
-	Pt      POINT
-}
 
 type WNDPROC func(HWND, uint32, uintptr, uintptr) uintptr
 
@@ -132,7 +103,6 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	return
 }
 
-// (NOTE): for MessageBox function
 const (
 	MB_OK                uint32 = 0x00000000
 	MB_OKCANCEL          uint32 = 0x00000001
@@ -252,24 +222,6 @@ func UpdateWindow(hWnd HWND) error {
 	}
 }
 
-func TranslateMessage(pMsg *MSG) error {
-	r1, _, _ := syscall.Syscall(procTranslateMessage.Addr(), 1, uintptr(unsafe.Pointer(pMsg)), 0, 0)
-	if r1 == 0 {
-		return errors.New("TranslateMessage failed.")
-	} else {
-		return nil
-	}
-}
-
-func DispatchMessage(pMsg *MSG) uintptr {
-	r1, _, _ := syscall.Syscall(procDispatchMessage.Addr(), 1, uintptr(unsafe.Pointer(pMsg)), 0, 0)
-	return r1
-}
-
-func PostQuitMessage(ExitCode int32) {
-	syscall.Syscall(procPostQuitMessage.Addr(), 1, uintptr(ExitCode), 0, 0)
-}
-
 func DestroyWindow(hWnd HWND) (err error) {
 	r1, _, e1 := syscall.Syscall(procDestroyWindow.Addr(), 1, uintptr(hWnd), 0, 0)
 	if n := int32(r1); n == 0 {
@@ -282,41 +234,43 @@ func DestroyWindow(hWnd HWND) (err error) {
 	return
 }
 
-/*
-int WINAPI LoadString(
-  _In_opt_  HINSTANCE hInstance,
-  _In_      UINT uID,
-  _Out_     LPTSTR lpBuffer,
-  _In_      int nBufferMax
-);
-*/
-
-func LoadString(hInstance HINSTANCE, id uint32, BufferMax int) (str string, err error) {
-	CommonErrorString := "winapi.LoadString: "
-	if BufferMax <= 0 {
-		err = errors.New(CommonErrorString + "BufferMax <= 0.")
-		return
-	}
-
-	buf := make([]uint16, BufferMax)
+func _LoadString(Inst HINSTANCE, id uint16, Buffer *uint16, BufferMax int32) (int32, error) {
 	r1, _, e1 := syscall.Syscall6(procLoadString.Addr(), 4,
-		uintptr(hInstance),
-		uintptr(id),
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(BufferMax),
+		uintptr(Inst), uintptr(id), uintptr(unsafe.Pointer(Buffer)), uintptr(BufferMax),
 		0, 0)
-	n := int32(r1)
-	if n <= 0 {
-		if e1 != 0 {
-			err = error(e1)
-		} else {
-			err = errors.New(CommonErrorString + "syscall failed.")
-		}
+	r := int32(r1)
+	if r > 0 {
+		return r, nil
 	} else {
-		str = syscall.UTF16ToString(buf)
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			return 0, wec
+		} else {
+			return 0, errors.New("LoadString failed.")
+		}
 	}
+}
 
-	return
+func LoadString(hInstance HINSTANCE, id uint16) (string, error) {
+	var err error
+	var Len, Len1 int32
+	var p *uint16 = nil
+	Len, err = _LoadString(hInstance, id, (*uint16)(unsafe.Pointer(&p)), 0)
+
+	if err == nil && Len > 0 {
+		Buffer := make([]uint16, Len+1)
+		Len1, err = _LoadString(hInstance, id, &Buffer[0], Len+1)
+		if err == nil && Len == Len1 {
+			Buffer[Len] = 0
+			return syscall.UTF16ToString(Buffer), nil
+		} else {
+			return "", err
+		}
+	} else if err != nil {
+		return "", err
+	} else {
+		return "", errors.New("LoadString failed.")
+	}
 }
 
 func LoadIconById(hinst HINSTANCE, id uint16) (icon HICON, err error) {
@@ -605,13 +559,3 @@ const (
 	WS_EX_COMPOSITED uint32 = 0x02000000
 	WS_EX_NOACTIVATE uint32 = 0x08000000
 )
-
-func GetMessage(pMsg *MSG, hWnd HWND, wMsgFilterMin uint32, wMsgFilterMax uint32) int32 {
-	r1, _, _ := syscall.Syscall6(procGetMessage.Addr(), 4,
-		uintptr(unsafe.Pointer(pMsg)),
-		uintptr(hWnd),
-		uintptr(wMsgFilterMin),
-		uintptr(wMsgFilterMax),
-		0, 0)
-	return int32(r1)
-}

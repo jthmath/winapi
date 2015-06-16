@@ -1,4 +1,4 @@
-﻿// +build windows
+// +build windows
 
 package winapi
 
@@ -16,12 +16,6 @@ func GetLastError() uint32 {
 func ExitProcess(ExitCode uint32) {
 	syscall.Syscall(procExitProcess.Addr(), 1, uintptr(ExitCode), 0, 0)
 }
-
-const (
-	FILE_BEGIN   uint32 = 0
-	FILE_CURRENT uint32 = 1
-	FILE_END     uint32 = 2
-)
 
 func GetModuleHandle(ModuleName string) (h HINSTANCE, err error) {
 	pStr, err := SpecUTF16PtrFromString(ModuleName)
@@ -53,6 +47,12 @@ func CloseHandle(h HANDLE) (err error) {
 	}
 	return
 }
+
+const (
+	FILE_BEGIN   uint32 = 0
+	FILE_CURRENT uint32 = 1
+	FILE_END     uint32 = 2
+)
 
 func SetFilePointer(hFile HANDLE,
 	DistanceToMove int64, MoveMethod uint32) (NewPointer int64, err error) {

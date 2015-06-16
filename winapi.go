@@ -7,12 +7,8 @@ import (
 )
 
 var (
-	dll_gdi    = syscall.NewLazyDLL("gdi32.dll")
-	dll_kernel = syscall.NewLazyDLL("kernel32.dll")
-	dll_user   = syscall.NewLazyDLL("user32.dll")
-)
+	dll_gdi = syscall.NewLazyDLL("gdi32.dll")
 
-var (
 	procBitBlt             = dll_gdi.NewProc("BitBlt")
 	procDeleteObject       = dll_gdi.NewProc("DeleteObject")
 	procGetObject          = dll_gdi.NewProc("GetObject")
@@ -22,6 +18,8 @@ var (
 )
 
 var (
+	dll_kernel = syscall.NewLazyDLL("kernel32.dll")
+
 	procGetLastError    = dll_kernel.NewProc("GetLastError")
 	procExitProcess     = dll_kernel.NewProc("ExitProcess")
 	procCreateFile      = dll_kernel.NewProc("CreateFileW")
@@ -34,6 +32,8 @@ var (
 )
 
 var (
+	dll_user = syscall.NewLazyDLL("user32.dll")
+
 	procDefWindowProc    = dll_user.NewProc("DefWindowProcW")
 	procGetMessage       = dll_user.NewProc("GetMessageW")
 	procRegisterClass    = dll_user.NewProc("RegisterClassExW")
@@ -51,4 +51,12 @@ var (
 	procLoadImage        = dll_user.NewProc("LoadImageW")
 	procBeginPaint       = dll_user.NewProc("BeginPaint")
 	procEndPaint         = dll_user.NewProc("EndPaint")
+)
+
+var (
+	dll_comdlg = syscall.NewLazyDLL("comdlg32.dll")
+
+	procGetSaveFileName      = dll_comdlg.NewProc("GetSaveFileNameW")
+	procGetOpenFileName      = dll_comdlg.NewProc("GetOpenFileNameW")
+	procCommDlgExtendedError = dll_comdlg.NewProc("CommDlgExtendedError")
 )

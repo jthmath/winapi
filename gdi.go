@@ -1,3 +1,5 @@
+// +build windows
+
 package winapi
 
 import (
@@ -7,10 +9,6 @@ import (
 )
 
 const HGDI_ERROR HGDIOBJ = HGDIOBJ(^uintptr(0))
-
-/*
-
-*/
 
 const ( // Ternary raster operations
 	SRCCOPY        uint32 = 0x00CC0020 // dest = source
