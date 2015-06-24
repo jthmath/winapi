@@ -48,6 +48,7 @@ var (
 	procLoadString       = dll_user.NewProc("LoadStringW")
 	procLoadIcon         = dll_user.NewProc("LoadIconW")
 	procLoadCursor       = dll_user.NewProc("LoadCursorW")
+	procLoadBitmap       = dll_user.NewProc("LoadBitmapW")
 	procLoadImage        = dll_user.NewProc("LoadImageW")
 	procBeginPaint       = dll_user.NewProc("BeginPaint")
 	procEndPaint         = dll_user.NewProc("EndPaint")

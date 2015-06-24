@@ -21,13 +21,7 @@ type HCURSOR uintptr
 type HBRUSH uintptr
 type HBITMAP uintptr
 
-type SecurityAttributes struct {
-	Length             uint32
-	SecurityDescriptor uintptr
-	InheritHandle      int32
-}
-
-type Overlapped struct {
+type OVERLAPPED struct {
 	Internal     uintptr
 	InternalHigh uintptr
 	Offset       uint32

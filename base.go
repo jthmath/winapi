@@ -41,14 +41,15 @@ func _FormatMessage(flags uint32, msgsrc interface{}, msgid uint32, langid uint3
 	return
 }
 
-type WinErrorCode uint32
-
-func (this WinErrorCode) Error() string {
-	var flags uint32 = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY | FORMAT_MESSAGE_IGNORE_INSERTS
-	str, err := FormatMessage(flags, nil, uint32(this), 0, nil)
-	if err == nil {
-		return str
-	} else {
-		return fmt.Sprintf("winapi error. GetLastError() == %d", uint32(this))
-	}
+/*
+typedef struct _SECURITY_ATTRIBUTES {
+    DWORD  nLength;
+    void   *pSecurityDescriptor;
+    BOOL   bInheritHandle;
+} SECURITY_ATTRIBUTES;
+*/
+type SECURITY_ATTRIBUTES struct {
+	Length             uint32
+	SecurityDescriptor uintptr
+	InheritHandle      int32
 }

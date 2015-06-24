@@ -1,8 +1,8 @@
-// +build windows
-
 /*
 此文件包含 user32.dll 中的函数，其中，关于【消息】的另放在 message.go 中
 */
+
+// +build windows
 
 package winapi
 
@@ -273,40 +273,38 @@ func LoadString(hInstance HINSTANCE, id uint16) (string, error) {
 	}
 }
 
-func LoadIconById(hinst HINSTANCE, id uint16) (icon HICON, err error) {
-	r1, _, e1 := syscall.Syscall(procLoadIcon.Addr(), 2,
-		uintptr(hinst), MakeIntResource(id), 0)
-	if r1 == 0 {
-		if e1 != 0 {
-			err = error(e1)
-		} else {
-			err = errors.New("LoadIconById failed.")
-		}
+func LoadBitmapById(hInst HINSTANCE, id uint16) (HBITMAP, error) {
+	r1, _, e1 := syscall.Syscall(procLoadBitmap.Addr(), 2,
+		uintptr(hInst), MakeIntResource(id), 0)
+	if r1 != 0 {
+		return HBITMAP(r1), nil
 	} else {
-		icon = HICON(r1)
-	}
-	return
-}
-
-func LoadIconByName(hinst HINSTANCE, name string) (icon HICON, err error) {
-	pName, err := syscall.UTF16PtrFromString(name)
-	if err != nil {
-		return
-	}
-
-	r1, _, e1 := syscall.Syscall(procLoadIcon.Addr(), 2,
-		uintptr(hinst), uintptr(unsafe.Pointer(pName)), 0)
-	if r1 == 0 {
 		wec := WinErrorCode(e1)
 		if wec != 0 {
-			err = wec
+			return 0, wec
 		} else {
-			err = errors.New("LoadIconByName failed.")
+			return 0, errors.New("LoadBitmapById failed.")
 		}
-	} else {
-		icon = HICON(r1)
 	}
-	return
+}
+
+func LoadBitmapByName(hInst HINSTANCE, Name string) (HBITMAP, error) {
+	p, err := syscall.UTF16PtrFromString(Name)
+	if err != nil {
+		return 0, err
+	}
+	r1, _, e1 := syscall.Syscall(procLoadBitmap.Addr(), 2,
+		uintptr(hInst), uintptr(unsafe.Pointer(p)), 0)
+	if r1 != 0 {
+		return HBITMAP(r1), nil
+	} else {
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			return 0, wec
+		} else {
+			return 0, errors.New("LoadBitmapByName failed.")
+		}
+	}
 }
 
 const (
@@ -346,6 +344,42 @@ func LoadCursorByName(hinst HINSTANCE, name string) (cursor HCURSOR, err error) 
 		}
 	} else {
 		cursor = HCURSOR(r1)
+	}
+	return
+}
+
+func LoadIconById(hinst HINSTANCE, id uint16) (icon HICON, err error) {
+	r1, _, e1 := syscall.Syscall(procLoadIcon.Addr(), 2,
+		uintptr(hinst), MakeIntResource(id), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = errors.New("LoadIconById failed.")
+		}
+	} else {
+		icon = HICON(r1)
+	}
+	return
+}
+
+func LoadIconByName(hinst HINSTANCE, name string) (icon HICON, err error) {
+	pName, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return
+	}
+
+	r1, _, e1 := syscall.Syscall(procLoadIcon.Addr(), 2,
+		uintptr(hinst), uintptr(unsafe.Pointer(pName)), 0)
+	if r1 == 0 {
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			err = wec
+		} else {
+			err = errors.New("LoadIconByName failed.")
+		}
+	} else {
+		icon = HICON(r1)
 	}
 	return
 }
@@ -489,7 +523,7 @@ const (
 	WS_CLIPSIBLINGS uint32 = 0x04000000
 	WS_CLIPCHILDREN uint32 = 0x02000000
 	WS_MAXIMIZE     uint32 = 0x01000000
-	WS_CAPTION      uint32 = 0x00C00000 /* WS_BORDER | WS_DLGFRAME  */
+	WS_CAPTION      uint32 = 0x00C00000 // WS_BORDER | WS_DLGFRAME
 	WS_BORDER       uint32 = 0x00800000
 	WS_DLGFRAME     uint32 = 0x00400000
 	WS_VSCROLL      uint32 = 0x00200000
