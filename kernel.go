@@ -18,15 +18,25 @@ func ExitProcess(ExitCode uint32) {
 }
 
 func GetModuleHandle(ModuleName string) (h HINSTANCE, err error) {
-	pStr, err := SpecUTF16PtrFromString(ModuleName)
-	if err != nil {
-		return
+	var a uintptr
+	var pStr *uint16
+
+	if ModuleName == "" {
+		a = 0
+	} else {
+		pStr, err = syscall.UTF16PtrFromString(ModuleName)
+		if err != nil {
+			return
+		} else {
+			a = uintptr(unsafe.Pointer(pStr))
+		}
 	}
-	r1, _, e1 := syscall.Syscall(procGetModuleHandle.Addr(), 1,
-		uintptr(unsafe.Pointer(pStr)), 0, 0)
+
+	r1, _, e1 := syscall.Syscall(procGetModuleHandle.Addr(), 1, a, 0, 0)
 	if r1 == 0 {
-		if e1 != 0 {
-			err = error(e1)
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			err = wec
 		} else {
 			err = errors.New("GetModuleHandle failed.")
 		}

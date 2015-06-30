@@ -52,6 +52,12 @@ var (
 	procLoadImage        = dll_user.NewProc("LoadImageW")
 	procBeginPaint       = dll_user.NewProc("BeginPaint")
 	procEndPaint         = dll_user.NewProc("EndPaint")
+
+	// 菜单
+	procAppendMenu      = dll_user.NewProc("AppendMenuW")
+	procCreateMenu      = dll_user.NewProc("CreateMenu")
+	procCreatePopupMenu = dll_user.NewProc("CreatePopupMenu")
+	procDestroyMenu     = dll_user.NewProc("DestroyMenu")
 )
 
 var (

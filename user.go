@@ -39,7 +39,7 @@ type WNDCLASS struct {
 	HIcon         HICON
 	HCursor       HCURSOR
 	HbrBackground HBRUSH
-	PszMenuName   string
+	Menu          interface{}
 	PszClassName  string
 	HIconSmall    HICON
 }
@@ -65,16 +65,39 @@ func newWndProc(proc WNDPROC) uintptr {
 
 func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	if pWndClass == nil {
-		return 0, error(syscall.EINVAL)
+		err = errors.New("RegisterClass: pWndClass must not be nil.")
+		return
 	}
-	_pMenuName, err := SpecUTF16PtrFromString(pWndClass.PszMenuName)
+
+	_pClassName, err := syscall.UTF16PtrFromString(pWndClass.PszClassName)
 	if err != nil {
 		return
 	}
-	_pClassName, err := SpecUTF16PtrFromString(pWndClass.PszClassName)
-	if err != nil {
-		return
+
+	var Menu uintptr = 70000
+
+	var _pMenuName *uint16 = nil
+
+	switch pWndClass.Menu.(type) {
+	case uint16:
+		Menu = MakeIntResource(pWndClass.Menu.(uint16))
+	case int:
+		intMenu := pWndClass.Menu.(int)
+		if intMenu < 0 || intMenu > 0xFFFF {
+			err = errors.New("Menu's id must be 0 ~ 65535.")
+			return
+		} else {
+			Menu = MakeIntResource(uint16(intMenu))
+		}
+	case string:
+		_pMenuName, err = syscall.UTF16PtrFromString(pWndClass.Menu.(string))
+		if err != nil {
+			return
+		}
+	default:
+		return 0, errors.New("RegisterClass: Menu's type must be uint16 or string.")
 	}
+
 	var wc _WNDCLASS
 	wc.cbSize = uint32(unsafe.Sizeof(wc))
 	wc.style = pWndClass.Style
@@ -85,9 +108,14 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	wc.hIcon = pWndClass.HIcon
 	wc.hCursor = pWndClass.HCursor
 	wc.hbrBackground = pWndClass.HbrBackground
-	wc.pszMenuName = _pMenuName
+	if _pClassName != nil {
+		wc.pszMenuName = _pMenuName
+	} else {
+		wc.pszMenuName = (*uint16)(unsafe.Pointer(Menu))
+	}
 	wc.pszClassName = _pClassName
 	wc.hIconSmall = pWndClass.HIconSmall
+
 	r1, _, e1 := syscall.Syscall(procRegisterClass.Addr(), 1, uintptr(unsafe.Pointer(&wc)), 0, 0)
 	n := uint16(r1)
 	if n == 0 {
@@ -402,17 +430,6 @@ const ( // LoadImage函数的fuLoad参数
 	LR_VGACOLOR         = 0x00000080
 )
 
-/*
-HANDLE WINAPI LoadImage(
-  _In_opt_  HINSTANCE hinst,
-  _In_      LPCTSTR lpszName,
-  _In_      UINT uType,
-  _In_      int cxDesired,
-  _In_      int cyDesired,
-  _In_      UINT fuLoad
-);
-*/
-
 func LoadImageById(hinst HINSTANCE, id uint16, Type uint32,
 	cxDesired int32, cyDesired int32, fLoad uint32) (hImage HANDLE, err error) {
 	r1, _, e1 := syscall.Syscall6(procLoadImage.Addr(), 6,
@@ -426,7 +443,7 @@ func LoadImageById(hinst HINSTANCE, id uint16, Type uint32,
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = errors.New("LoadImageById failed.")
+			err = errors.New("winapi: LoadImageById failed.")
 		}
 	} else {
 		hImage = HANDLE(r1)
@@ -448,8 +465,9 @@ func LoadImageByName(hinst HINSTANCE, name string, Type uint32,
 		uintptr(cyDesired),
 		uintptr(fLoad))
 	if r1 == 0 {
-		if e1 != 0 {
-			err = error(e1)
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			err = wec
 		} else {
 			err = errors.New("LoadImageByName failed.")
 		}

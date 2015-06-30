@@ -5,14 +5,6 @@ import (
 	"syscall"
 )
 
-func SpecUTF16PtrFromString(s string) (*uint16, error) {
-	if s == "" {
-		return nil, nil
-	} else {
-		return syscall.UTF16PtrFromString(s)
-	}
-}
-
 func ByteArrayToUint32LittleEndian(b [4]byte) uint32 {
 	return uint32(b[0]) + uint32(b[1])<<8 + uint32(b[2])<<16 + uint32(b[3])<<24
 }
