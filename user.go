@@ -8,6 +8,7 @@ package winapi
 
 import (
 	"errors"
+	"fmt"
 	"syscall"
 	"unsafe"
 )
@@ -74,23 +75,20 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 		return
 	}
 
+	if pWndClass.Menu == nil {
+		err = errors.New("RegisterClass: can't find Menu.")
+		return
+	}
+
 	var Menu uintptr = 70000
 
 	var _pMenuName *uint16 = nil
 
-	switch pWndClass.Menu.(type) {
+	switch v := pWndClass.Menu.(type) {
 	case uint16:
-		Menu = MakeIntResource(pWndClass.Menu.(uint16))
-	case int:
-		intMenu := pWndClass.Menu.(int)
-		if intMenu < 0 || intMenu > 0xFFFF {
-			err = errors.New("Menu's id must be 0 ~ 65535.")
-			return
-		} else {
-			Menu = MakeIntResource(uint16(intMenu))
-		}
+		Menu = MakeIntResource(v)
 	case string:
-		_pMenuName, err = syscall.UTF16PtrFromString(pWndClass.Menu.(string))
+		_pMenuName, err = syscall.UTF16PtrFromString(v)
 		if err != nil {
 			return
 		}
@@ -172,6 +170,14 @@ func MessageBox(hWnd HWND, Text string, Caption string, Type uint32) (ret int32,
 	return
 }
 
+func MustMessageBox(hWnd HWND, Text string, Caption string, Type uint32) (ret int32) {
+	ret, err := MessageBox(hWnd, Text, Caption, Type)
+	if err != nil {
+		panic(err)
+	}
+	return
+}
+
 func ErrorBox(err error) error {
 	var e error
 	if err == nil {
@@ -180,6 +186,25 @@ func ErrorBox(err error) error {
 		_, e = MessageBox(0, err.Error(), "error", MB_OK|MB_ICONERROR)
 	}
 	return e
+}
+
+func MustErrorBox(err error) {
+	if e := ErrorBox(err); e != nil {
+		panic(e)
+	}
+}
+
+func ErrorAssert(err error) {
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+}
+
+func WinErrorAssert(err error) {
+	if err != nil {
+		MustErrorBox(err)
+	}
 }
 
 func DefWindowProc(hWnd HWND, message uint32, wParam uintptr, lParam uintptr) uintptr {

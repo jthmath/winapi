@@ -1,8 +1,6 @@
 /*
 与菜单有关的函数
 
-In This Section
-
 AppendMenu
 CheckMenuItem
 CheckMenuRadioItem
