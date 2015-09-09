@@ -66,7 +66,7 @@ func newWndProc(proc WNDPROC) uintptr {
 
 func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	if pWndClass == nil {
-		err = errors.New("RegisterClass: pWndClass must not be nil.")
+		err = errors.New("winapi: RegisterClass: pWndClass must not be nil.")
 		return
 	}
 
@@ -76,7 +76,7 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	}
 
 	if pWndClass.Menu == nil {
-		err = errors.New("RegisterClass: can't find Menu.")
+		err = errors.New("winapi: RegisterClass: can't find Menu.")
 		return
 	}
 
@@ -93,7 +93,7 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 			return
 		}
 	default:
-		return 0, errors.New("RegisterClass: Menu's type must be uint16 or string.")
+		return 0, errors.New("winapi: RegisterClass: Menu's type must be uint16 or string.")
 	}
 
 	var wc _WNDCLASS
@@ -162,7 +162,7 @@ func MessageBox(hWnd HWND, Text string, Caption string, Type uint32) (ret int32,
 		if e1 != 0 {
 			err = error(WinErrorCode(e1))
 		} else {
-			err = errors.New("MessageBox failed.")
+			err = errors.New("winapi: MessageBox failed.")
 		}
 	} else {
 		ret = n
@@ -233,7 +233,7 @@ func CreateWindow(ClassName string, WindowName string, Style uint32, ExStyle uin
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = errors.New("CreateWindow failed.")
+			err = errors.New("winapi: CreateWindow failed.")
 		}
 	} else {
 		hWnd = HWND(r1)
@@ -269,7 +269,7 @@ func ShowWindow(hWnd HWND, CmdShow int32) bool {
 func UpdateWindow(hWnd HWND) error {
 	r1, _, _ := syscall.Syscall(procUpdateWindow.Addr(), 1, uintptr(hWnd), 0, 0)
 	if r1 == 0 {
-		return errors.New("UpdateWindow failed.") // 该函数没有对应的GetLastError值
+		return errors.New("winapi: UpdateWindow failed.") // 该函数没有对应的GetLastError值
 	} else {
 		return nil
 	}
@@ -281,7 +281,7 @@ func DestroyWindow(hWnd HWND) (err error) {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = errors.New("DestroyWindow failed.")
+			err = errors.New("winapi: DestroyWindow failed.")
 		}
 	}
 	return
@@ -299,7 +299,7 @@ func _LoadString(Inst HINSTANCE, id uint16, Buffer *uint16, BufferMax int32) (in
 		if wec != 0 {
 			return 0, wec
 		} else {
-			return 0, errors.New("LoadString failed.")
+			return 0, errors.New("winapi: LoadString failed.")
 		}
 	}
 }
@@ -322,7 +322,7 @@ func LoadString(hInstance HINSTANCE, id uint16) (string, error) {
 	} else if err != nil {
 		return "", err
 	} else {
-		return "", errors.New("LoadString failed.")
+		return "", errors.New("winapi: LoadString failed.")
 	}
 }
 
@@ -336,7 +336,7 @@ func LoadBitmapById(hInst HINSTANCE, id uint16) (HBITMAP, error) {
 		if wec != 0 {
 			return 0, wec
 		} else {
-			return 0, errors.New("LoadBitmapById failed.")
+			return 0, errors.New("winapi: LoadBitmapById failed.")
 		}
 	}
 }
@@ -355,7 +355,7 @@ func LoadBitmapByName(hInst HINSTANCE, Name string) (HBITMAP, error) {
 		if wec != 0 {
 			return 0, wec
 		} else {
-			return 0, errors.New("LoadBitmapByName failed.")
+			return 0, errors.New("winapi: LoadBitmapByName failed.")
 		}
 	}
 }
@@ -408,7 +408,7 @@ func LoadIconById(hinst HINSTANCE, id uint16) (icon HICON, err error) {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = errors.New("LoadIconById failed.")
+			err = errors.New("winapi: LoadIconById failed.")
 		}
 	} else {
 		icon = HICON(r1)
@@ -429,7 +429,7 @@ func LoadIconByName(hinst HINSTANCE, name string) (icon HICON, err error) {
 		if wec != 0 {
 			err = wec
 		} else {
-			err = errors.New("LoadIconByName failed.")
+			err = errors.New("winapi: LoadIconByName failed.")
 		}
 	} else {
 		icon = HICON(r1)
@@ -494,7 +494,7 @@ func LoadImageByName(hinst HINSTANCE, name string, Type uint32,
 		if wec != 0 {
 			err = wec
 		} else {
-			err = errors.New("LoadImageByName failed.")
+			err = errors.New("winapi: LoadImageByName failed.")
 		}
 	} else {
 		hImage = HANDLE(r1)
