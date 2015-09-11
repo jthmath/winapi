@@ -2,6 +2,19 @@
 
 package winapi
 
+//
+// AccessSystemAcl access type
+//
+const ACCESS_SYSTEM_SECURITY = 0x01000000
+
+//
+// MaximumAllowed access type
+//
+const MAXIMUM_ALLOWED = 0x02000000
+
+//
+//  These are the generic rights.
+//
 const (
 	GENERIC_READ    = 0x80000000
 	GENERIC_WRITE   = 0x40000000

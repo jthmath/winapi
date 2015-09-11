@@ -92,7 +92,7 @@ typedef struct tagPAINTSTRUCT {
     BYTE        rgbReserved[32];
 } PAINTSTRUCT
 */
-type PaintStruct struct {
+type PAINTSTRUCT struct {
 	Hdc         HDC
 	FErase      int32
 	RcPaint     RECT
@@ -101,7 +101,7 @@ type PaintStruct struct {
 	RGBReserved [32]byte
 }
 
-func BeginPaint(hWnd HWND, ps *PaintStruct) (hdc HDC, err error) {
+func BeginPaint(hWnd HWND, ps *PAINTSTRUCT) (hdc HDC, err error) {
 	r1, _, _ := syscall.Syscall(procBeginPaint.Addr(), 2,
 		uintptr(hWnd), uintptr(unsafe.Pointer(ps)), 0)
 	if r1 == 0 {
@@ -112,7 +112,7 @@ func BeginPaint(hWnd HWND, ps *PaintStruct) (hdc HDC, err error) {
 	return
 }
 
-func EndPaint(hWnd HWND, ps *PaintStruct) {
+func EndPaint(hWnd HWND, ps *PAINTSTRUCT) {
 	syscall.Syscall(procEndPaint.Addr(), 2,
 		uintptr(hWnd), uintptr(unsafe.Pointer(ps)), 0)
 }
