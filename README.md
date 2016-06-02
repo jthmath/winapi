@@ -9,23 +9,23 @@
 我没有照搬 Windows API，而是在做了一些妥善的改动。例如，不封装`CreateWindow`而封装 `CreateWindowEx`，封装之后的Go的函数名为`CreateWindow`。
 
 ### gdi ###
-BitBlt<br>
-DeleteObject<br>
-GetObject<br>
-CreateCompatibleDC<br>
-SelectObject<br>
-DeleteDC<br>
+BitBlt  
+DeleteObject  
+GetObject  
+CreateCompatibleDC 
+SelectObject  
+DeleteDC
 
 ### kernel ###
-GetLastError<br>
-ExitProcess<br>
-CreateFile<br>
-ReadFile<br>
-WriteFile<br>
-SetFilePointer<br>
-GetModuleHandle<br>
-CloseHandle<br>
-FormatMessage<br>
+GetLastError  
+ExitProcess  
+CreateFile  
+ReadFile  
+WriteFile  
+SetFilePointer  
+GetModuleHandle  
+CloseHandle  
+FormatMessage
 
 ### user ###
 DefWindowProc<br>
