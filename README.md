@@ -1,8 +1,8 @@
 # winapi #
-这是用 golang 编写的调用 Windows API 的包。将 Windows API 转换成 golang 的风格，使其易用。
+这是用 Go 编写的调用 Windows API 的包。将 Windows API 转换成 Go 的风格，使其易用。
 
 ## 使用方法 ##
-本包不依赖任何第三方包、框架或库。<br>
+本包不依赖任何第三方包、框架或库。  
 任何安装了 Go 环境的 Windows 系统都可以使用。
 
 ## 已实现的或有所改变的 API ##
@@ -48,7 +48,7 @@ BeginPaint<br>
 EndPaint<br>
 
 ### comdlg ###
-1
+暂无
 
 ## 增加的函数 ##
 ErrorBox<br>
@@ -56,12 +56,10 @@ ErrorAssert<br>
 WinErrorAssert<br>
 
 ## 不实现的函数 ##
-1. 与线程相关的函数，如CreateThread，因为Go已经有了很好的并发特性。<br>
-2. 同步有关的函数，如CreateMutex。
+与线程相关的函数，如`CreateThread`、`CreateMutex`，因为Go已经有了很好的并发特性。
 
 ## TODO ##
-实现COM接口的封装，例如任务栏的进度条、DirectX等。
-
+实现COM接口的封装，DirectX等。
 
 ## 协议 ##
 本项目采用与`golang`相同的协议。
