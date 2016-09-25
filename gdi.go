@@ -10,7 +10,8 @@ import (
 
 const HGDI_ERROR HGDIOBJ = HGDIOBJ(^uintptr(0))
 
-const ( // Ternary raster operations
+// Ternary raster operations
+const (
 	SRCCOPY        uint32 = 0x00CC0020 // dest = source
 	SRCPAINT       uint32 = 0x00EE0086 // dest = source OR dest
 	SRCAND         uint32 = 0x008800C6 // dest = source AND dest

@@ -1,6 +1,6 @@
 // +build !windows
 
-package winapi
+package reg
 
 func init() {
 	panic(`runtime.GOOS != "windows"`)

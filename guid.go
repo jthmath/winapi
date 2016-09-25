@@ -24,20 +24,9 @@ func (this GUID) String() string {
 		this.Data4[5], this.Data4[6], this.Data4[7])
 }
 
-/*
-56FDF344-FD6D-11d0-958A-006097C9A090
-
-var CLSID_TaskbarList = GUID{
-	Data1: 1459483460,
-	Data2: 64877,
-	Data3: 4560,
-	Data4: [8]uint8{149, 138, 0, 96, 151, 201, 160, 144},
-}
-*/
-
 func MakeGuid(str string) (r GUID, err error) {
 	var n int
-	FormatString := "%08X-%04X-%04X-%04X-%02X%02X%02X%02X%02X%02X"
+	const FormatString = "%08X-%04X-%04X-%04X-%02X%02X%02X%02X%02X%02X"
 	var u uint16
 	var guid GUID
 	n, err = fmt.Sscanf(str, FormatString, &guid.Data1, &guid.Data2, &guid.Data3, &u,
@@ -46,21 +35,21 @@ func MakeGuid(str string) (r GUID, err error) {
 
 	if err == nil {
 		if n != 10 {
-			err = errors.New("")
+			err = errors.New("不是有效的 GUID 字符串")
 		} else {
 			guid.Data4[0] = uint8(u >> 8)
 			guid.Data4[1] = uint8(u)
 			r = guid
 		}
 	}
+
 	return
 }
 
 func MustMakeGuid(str string) GUID {
 	guid, err := MakeGuid(str)
-	if err == nil {
-		return guid
-	} else {
+	if err != nil {
 		panic(err)
 	}
+	return guid
 }
