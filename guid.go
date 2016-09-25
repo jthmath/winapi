@@ -15,7 +15,7 @@ type GUID struct {
 }
 
 func (this GUID) String() string {
-	FormatString := "%08X-%04X-%04X-%04X-%02X%02X%02X%02X%02X%02X"
+	const FormatString = "%08X-%04X-%04X-%04X-%02X%02X%02X%02X%02X%02X"
 	a := this.Data4[0]
 	b := this.Data4[1]
 	u := uint16(a)<<8 | uint16(b)
