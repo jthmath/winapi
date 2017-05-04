@@ -2,8 +2,6 @@
 错误相关，包括 Windows Error Code 和 HRESULT
 */
 
-// +build windows
-
 package winapi
 
 import (

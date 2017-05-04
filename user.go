@@ -2,8 +2,6 @@
 此文件包含 user32.dll 中的函数，其中，关于【消息】的另放在 message.go 中
 */
 
-// +build windows
-
 package winapi
 
 import (

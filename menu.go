@@ -43,8 +43,6 @@ TrackPopupMenuEx
 
 */
 
-// +build windows
-
 package winapi
 
 import (

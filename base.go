@@ -1,5 +1,3 @@
-// +build windows
-
 package winapi
 
 import (
@@ -52,4 +50,34 @@ type SECURITY_ATTRIBUTES struct {
 	Length             uint32
 	SecurityDescriptor uintptr
 	InheritHandle      int32
+}
+
+func CreateNamedPipe(
+	name string,
+	openMode uint32,
+	pipeMode uint32,
+	maxInstances uint32,
+	outBufferSize uint32,
+	inBufferSize uint32,
+	defaultTimeOut uint32,
+	sa *SECURITY_ATTRIBUTES) (HANDLE, error) {
+	return 0, nil
+}
+
+/*
+HANDLE WINAPI CreateNamedPipe(
+  _In_     LPCTSTR               lpName,
+  _In_     DWORD                 dwOpenMode,
+  _In_     DWORD                 dwPipeMode,
+  _In_     DWORD                 nMaxInstances,
+  _In_     DWORD                 nOutBufferSize,
+  _In_     DWORD                 nInBufferSize,
+  _In_     DWORD                 nDefaultTimeOut,
+  _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes
+);
+*/
+func _CreateNamedPipe(pName *uint16, dwOpenMode uint32, dwPipeMode uint32,
+	nMaxInstances uint32, nOutBufferSize uint32, nInBufferSize uint32,
+	nDefaultTimeOut uint32, pSecurityAttributes *SECURITY_ATTRIBUTES) (HANDLE, error) {
+	return 0, nil
 }
