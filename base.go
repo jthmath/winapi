@@ -1,6 +1,7 @@
 package winapi
 
 import (
+	"errors"
 	"fmt"
 	"syscall"
 	"unicode/utf16"
@@ -60,8 +61,15 @@ func CreateNamedPipe(
 	outBufferSize uint32,
 	inBufferSize uint32,
 	defaultTimeOut uint32,
-	sa *SECURITY_ATTRIBUTES) (HANDLE, error) {
-	return 0, nil
+	sa *SECURITY_ATTRIBUTES) (h HANDLE, err error) {
+	pName, err := syscall.UTF16PtrFromString(name)
+	if err != nil {
+		return
+	}
+
+	h, err = _CreateNamedPipe(pName, openMode, pipeMode, maxInstances,
+		outBufferSize, inBufferSize, defaultTimeOut, sa)
+	return
 }
 
 /*
@@ -78,6 +86,26 @@ HANDLE WINAPI CreateNamedPipe(
 */
 func _CreateNamedPipe(pName *uint16, dwOpenMode uint32, dwPipeMode uint32,
 	nMaxInstances uint32, nOutBufferSize uint32, nInBufferSize uint32,
-	nDefaultTimeOut uint32, pSecurityAttributes *SECURITY_ATTRIBUTES) (HANDLE, error) {
-	return 0, nil
+	nDefaultTimeOut uint32, pSecurityAttributes *SECURITY_ATTRIBUTES) (h HANDLE, err error) {
+	r1, _, e1 := syscall.Syscall9(procCreateNamedPipe.Addr(), 8,
+		uintptr(unsafe.Pointer(pName)),
+		uintptr(dwOpenMode),
+		uintptr(dwPipeMode),
+		uintptr(nMaxInstances),
+		uintptr(nOutBufferSize),
+		uintptr(nInBufferSize),
+		uintptr(nDefaultTimeOut),
+		uintptr(unsafe.Pointer(pSecurityAttributes)),
+		0)
+	if h == INVALID_HANDLE_VALUE {
+		wec := WinErrorCode(e1)
+		if wec != 0 {
+			err = wec
+		} else {
+			err = errors.New("GetModuleHandle failed.")
+		}
+	} else {
+		h = HANDLE(r1)
+	}
+	return
 }

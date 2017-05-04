@@ -27,6 +27,7 @@ var (
 	procGetModuleHandle = dll_kernel.NewProc("GetModuleHandleW")
 	procCloseHandle     = dll_kernel.NewProc("CloseHandle")
 	procFormatMessage   = dll_kernel.NewProc("FormatMessageW")
+	procCreateNamedPipe = dll_kernel.NewProc("CreateNamedPipeW")
 )
 
 var (
