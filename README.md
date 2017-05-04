@@ -40,10 +40,10 @@ DispatchMessage<br>
 PostQuitMessage<br>
 DestroyWindow<br>
 LoadString<br>
-LoadIcon - 分解为 LoadIconById 和 LoadIconByName<br>
-LoadCursor - 分解为 LoadCursorById 和 LoadCursorByName<br>
-LoadBitmap - 分解为 LoadBitmapById 和 LoadBitmapByName<br>
-LoadImage - 分解为 LoadImageById 和 LoadImageByName<br>
+LoadIcon<br>
+LoadCursor<br>
+LoadBitmap<br>
+LoadImage<br>
 BeginPaint<br>
 EndPaint<br>
 
