@@ -18,16 +18,17 @@ var (
 var (
 	dll_kernel = syscall.NewLazyDLL("kernel32.dll")
 
-	procGetLastError    = dll_kernel.NewProc("GetLastError")
-	procExitProcess     = dll_kernel.NewProc("ExitProcess")
-	procCreateFile      = dll_kernel.NewProc("CreateFileW")
-	procReadFile        = dll_kernel.NewProc("ReadFile")
-	procWriteFile       = dll_kernel.NewProc("WriteFile")
-	procSetFilePointer  = dll_kernel.NewProc("SetFilePointerEx")
-	procGetModuleHandle = dll_kernel.NewProc("GetModuleHandleW")
-	procCloseHandle     = dll_kernel.NewProc("CloseHandle")
-	procFormatMessage   = dll_kernel.NewProc("FormatMessageW")
-	procCreateNamedPipe = dll_kernel.NewProc("CreateNamedPipeW")
+	procGetLastError     = dll_kernel.NewProc("GetLastError")
+	procExitProcess      = dll_kernel.NewProc("ExitProcess")
+	procCreateFile       = dll_kernel.NewProc("CreateFileW")
+	procReadFile         = dll_kernel.NewProc("ReadFile")
+	procWriteFile        = dll_kernel.NewProc("WriteFile")
+	procSetFilePointer   = dll_kernel.NewProc("SetFilePointerEx")
+	procGetModuleHandle  = dll_kernel.NewProc("GetModuleHandleW")
+	procCloseHandle      = dll_kernel.NewProc("CloseHandle")
+	procFormatMessage    = dll_kernel.NewProc("FormatMessageW")
+	procCreateNamedPipe  = dll_kernel.NewProc("CreateNamedPipeW")
+	procConnectNamedPipe = dll_kernel.NewProc("ConnectNamedPipe")
 )
 
 var (

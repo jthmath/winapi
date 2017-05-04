@@ -1,11 +1,26 @@
 package winapi
 
 import (
-	"errors"
 	"fmt"
 	"syscall"
 	"unicode/utf16"
 	"unsafe"
+)
+
+//  These are flags supported through CreateFile (W7) and CreateFile2 (W8 and beyond)
+const (
+	FILE_FLAG_WRITE_THROUGH       = 0x80000000
+	FILE_FLAG_OVERLAPPED          = 0x40000000
+	FILE_FLAG_NO_BUFFERING        = 0x20000000
+	FILE_FLAG_RANDOM_ACCESS       = 0x10000000
+	FILE_FLAG_SEQUENTIAL_SCAN     = 0x08000000
+	FILE_FLAG_DELETE_ON_CLOSE     = 0x04000000
+	FILE_FLAG_BACKUP_SEMANTICS    = 0x02000000
+	FILE_FLAG_POSIX_SEMANTICS     = 0x01000000
+	FILE_FLAG_SESSION_AWARE       = 0x00800000
+	FILE_FLAG_OPEN_REPARSE_POINT  = 0x00200000
+	FILE_FLAG_OPEN_NO_RECALL      = 0x00100000
+	FILE_FLAG_FIRST_PIPE_INSTANCE = 0x00080000
 )
 
 const (
@@ -51,61 +66,4 @@ type SECURITY_ATTRIBUTES struct {
 	Length             uint32
 	SecurityDescriptor uintptr
 	InheritHandle      int32
-}
-
-func CreateNamedPipe(
-	name string,
-	openMode uint32,
-	pipeMode uint32,
-	maxInstances uint32,
-	outBufferSize uint32,
-	inBufferSize uint32,
-	defaultTimeOut uint32,
-	sa *SECURITY_ATTRIBUTES) (h HANDLE, err error) {
-	pName, err := syscall.UTF16PtrFromString(name)
-	if err != nil {
-		return
-	}
-
-	h, err = _CreateNamedPipe(pName, openMode, pipeMode, maxInstances,
-		outBufferSize, inBufferSize, defaultTimeOut, sa)
-	return
-}
-
-/*
-HANDLE WINAPI CreateNamedPipe(
-  _In_     LPCTSTR               lpName,
-  _In_     DWORD                 dwOpenMode,
-  _In_     DWORD                 dwPipeMode,
-  _In_     DWORD                 nMaxInstances,
-  _In_     DWORD                 nOutBufferSize,
-  _In_     DWORD                 nInBufferSize,
-  _In_     DWORD                 nDefaultTimeOut,
-  _In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes
-);
-*/
-func _CreateNamedPipe(pName *uint16, dwOpenMode uint32, dwPipeMode uint32,
-	nMaxInstances uint32, nOutBufferSize uint32, nInBufferSize uint32,
-	nDefaultTimeOut uint32, pSecurityAttributes *SECURITY_ATTRIBUTES) (h HANDLE, err error) {
-	r1, _, e1 := syscall.Syscall9(procCreateNamedPipe.Addr(), 8,
-		uintptr(unsafe.Pointer(pName)),
-		uintptr(dwOpenMode),
-		uintptr(dwPipeMode),
-		uintptr(nMaxInstances),
-		uintptr(nOutBufferSize),
-		uintptr(nInBufferSize),
-		uintptr(nDefaultTimeOut),
-		uintptr(unsafe.Pointer(pSecurityAttributes)),
-		0)
-	if h == INVALID_HANDLE_VALUE {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("GetModuleHandle failed.")
-		}
-	} else {
-		h = HANDLE(r1)
-	}
-	return
 }
