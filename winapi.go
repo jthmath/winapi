@@ -66,5 +66,5 @@ var (
 
 	procGetSaveFileName      = dll_comdlg.NewProc("GetSaveFileNameW")
 	procGetOpenFileName      = dll_comdlg.NewProc("GetOpenFileNameW")
-	procCommDlgExtendedError = dll_comdlg.NewProc("CommDlgExtendedError") //
+	procCommDlgExtendedError = dll_comdlg.NewProc("CommDlgExtendedError")
 )
