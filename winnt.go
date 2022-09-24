@@ -1,3 +1,5 @@
+//go:build windows
+
 package winapi
 
 //  The following are masks for the predefined standard access types

@@ -1,47 +1,4 @@
-/*
-与菜单有关的函数
-
-AppendMenu
-CheckMenuItem
-CheckMenuRadioItem
-CreateMenu
-CreatePopupMenu
-DeleteMenu
-DestroyMenu
-DrawMenuBar
-EnableMenuItem
-EndMenu
-GetMenu
-GetMenuBarInfo
-GetMenuCheckMarkDimensions
-GetMenuDefaultItem
-GetMenuInfo
-GetMenuItemCount
-GetMenuItemID
-GetMenuItemInfo
-GetMenuItemRect
-GetMenuState
-GetMenuString
-GetSubMenu
-GetSystemMenu
-HiliteMenuItem
-InsertMenu
-InsertMenuItem
-IsMenu
-LoadMenu
-LoadMenuIndirect
-MenuItemFromPoint
-ModifyMenu
-RemoveMenu
-SetMenu
-SetMenuDefaultItem
-SetMenuInfo
-SetMenuItemBitmaps
-SetMenuItemInfo
-TrackPopupMenu
-TrackPopupMenuEx
-
-*/
+//go:build windows
 
 package winapi
 
