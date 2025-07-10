@@ -14,14 +14,14 @@ type GUID struct {
 	Data4 [8]uint8
 }
 
-func (this GUID) String() string {
+func (guid *GUID) String() string {
 	const FormatString = "%08X-%04X-%04X-%04X-%02X%02X%02X%02X%02X%02X"
-	a := this.Data4[0]
-	b := this.Data4[1]
+	a := guid.Data4[0]
+	b := guid.Data4[1]
 	u := uint16(a)<<8 | uint16(b)
-	return fmt.Sprintf(FormatString, this.Data1, this.Data2, this.Data3, u,
-		this.Data4[2], this.Data4[3], this.Data4[4],
-		this.Data4[5], this.Data4[6], this.Data4[7])
+	return fmt.Sprintf(FormatString, guid.Data1, guid.Data2, guid.Data3, u,
+		guid.Data4[2], guid.Data4[3], guid.Data4[4],
+		guid.Data4[5], guid.Data4[6], guid.Data4[7])
 }
 
 func MakeGuid(str string) (r GUID, err error) {
