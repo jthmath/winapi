@@ -72,26 +72,27 @@ type BITMAP struct {
 
 /*
 int GetObject(
-  _In_   HGDIOBJ hgdiobj,
-  _In_   int cbBuffer,
-  _Out_  LPVOID lpvObject
+
+	_In_   HGDIOBJ hgdiobj,
+	_In_   int cbBuffer,
+	_Out_  LPVOID lpvObject
+
 );
 */
 func GetObject(gdiobj HGDIOBJ, cbBuffer int32, pv *byte) int32 {
-	r1, _, _ := syscall.Syscall(procGetObject.Addr(), 3,
-		uintptr(gdiobj), uintptr(cbBuffer), uintptr(unsafe.Pointer(pv)))
+	r1, _, _ := syscall.SyscallN(procGetObject.Addr(), uintptr(gdiobj), uintptr(cbBuffer), uintptr(unsafe.Pointer(pv)))
 	return int32(r1)
 }
 
 /*
-typedef struct tagPAINTSTRUCT {
-    HDC         hdc;
-    BOOL        fErase;
-    RECT        rcPaint;
-    BOOL        fRestore;
-    BOOL        fIncUpdate;
-    BYTE        rgbReserved[32];
-} PAINTSTRUCT
+	typedef struct tagPAINTSTRUCT {
+	    HDC         hdc;
+	    BOOL        fErase;
+	    RECT        rcPaint;
+	    BOOL        fRestore;
+	    BOOL        fIncUpdate;
+	    BYTE        rgbReserved[32];
+	} PAINTSTRUCT
 */
 type PAINTSTRUCT struct {
 	Hdc         HDC
@@ -103,10 +104,9 @@ type PAINTSTRUCT struct {
 }
 
 func BeginPaint(hWnd HWND, ps *PAINTSTRUCT) (hdc HDC, err error) {
-	r1, _, _ := syscall.Syscall(procBeginPaint.Addr(), 2,
-		uintptr(hWnd), uintptr(unsafe.Pointer(ps)), 0)
+	r1, _, _ := syscall.SyscallN(procBeginPaint.Addr(), uintptr(hWnd), uintptr(unsafe.Pointer(ps)))
 	if r1 == 0 {
-		err = errors.New("BeginPaint failed.")
+		err = errors.New("BeginPaint failed")
 	} else {
 		hdc = HDC(r1)
 	}
@@ -114,14 +114,13 @@ func BeginPaint(hWnd HWND, ps *PAINTSTRUCT) (hdc HDC, err error) {
 }
 
 func EndPaint(hWnd HWND, ps *PAINTSTRUCT) {
-	syscall.Syscall(procEndPaint.Addr(), 2,
-		uintptr(hWnd), uintptr(unsafe.Pointer(ps)), 0)
+	syscall.SyscallN(procEndPaint.Addr(), uintptr(hWnd), uintptr(unsafe.Pointer(ps)))
 }
 
 func CreateCompatibleDC(dc HDC) (HDC, error) {
-	r1, _, _ := syscall.Syscall(procCreateCompatibleDC.Addr(), 1, uintptr(dc), 0, 0)
+	r1, _, _ := syscall.SyscallN(procCreateCompatibleDC.Addr(), uintptr(dc))
 	if r1 == 0 {
-		return 0, errors.New("CreateCompatibleDC failed.")
+		return 0, errors.New("CreateCompatibleDC failed")
 	} else {
 		return HDC(r1), nil
 	}
@@ -129,16 +128,18 @@ func CreateCompatibleDC(dc HDC) (HDC, error) {
 
 /*
 HGDIOBJ SelectObject(
-  _In_  HDC hdc,
-  _In_  HGDIOBJ hgdiobj
+
+	_In_  HDC hdc,
+	_In_  HGDIOBJ hgdiobj
+
 );
 */
 func SelectObject(hdc HDC, hgdiobj HGDIOBJ) (robj HGDIOBJ, err error) {
-	r1, _, _ := syscall.Syscall(procSelectObject.Addr(), 2, uintptr(hdc), uintptr(hgdiobj), 0)
+	r1, _, _ := syscall.SyscallN(procSelectObject.Addr(), uintptr(hdc), uintptr(hgdiobj))
 	if r1 == 0 {
-		err = errors.New("An error occurs and the selected object is not a region.")
+		err = errors.New("an error occurs and the selected object is not a region")
 	} else if HGDIOBJ(r1) == HGDI_ERROR {
-		err = errors.New("SelectObject failed.")
+		err = errors.New("SelectObject failed")
 	} else {
 		robj = HGDIOBJ(r1)
 	}
@@ -146,9 +147,9 @@ func SelectObject(hdc HDC, hgdiobj HGDIOBJ) (robj HGDIOBJ, err error) {
 }
 
 func DeleteDC(dc HDC) error {
-	r1, _, _ := syscall.Syscall(procDeleteDC.Addr(), 1, uintptr(dc), 0, 0)
+	r1, _, _ := syscall.SyscallN(procDeleteDC.Addr(), uintptr(dc))
 	if r1 == 0 {
-		return errors.New("DeleteDC failed.")
+		return errors.New("DeleteDC failed")
 	} else {
 		return nil
 	}
