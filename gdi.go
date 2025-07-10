@@ -33,7 +33,7 @@ const (
 
 func BitBlt(hdcDest HDC, nXDest int32, nYdest int32, nWidth int32, nHeight int32,
 	hdcSrc HDC, nXSrc int32, nYSrc int32, Rop uint32) error {
-	r1, _, e1 := syscall.Syscall9(procBitBlt.Addr(), 9,
+	r1, _, e1 := syscall.SyscallN(procBitBlt.Addr(),
 		uintptr(hdcDest), uintptr(nXDest), uintptr(nYdest), uintptr(nWidth), uintptr(nHeight),
 		uintptr(hdcSrc), uintptr(nXSrc), uintptr(nYSrc),
 		uintptr(Rop))
@@ -41,7 +41,7 @@ func BitBlt(hdcDest HDC, nXDest int32, nYdest int32, nWidth int32, nHeight int32
 		if e1 != 0 {
 			return error(e1)
 		} else {
-			return errors.New("BitBlt failed.")
+			return errors.New("BitBlt failed")
 		}
 	} else {
 		return nil
@@ -49,11 +49,11 @@ func BitBlt(hdcDest HDC, nXDest int32, nYdest int32, nWidth int32, nHeight int32
 }
 
 func DeleteObject(obj HGDIOBJ) error {
-	r1, _, _ := syscall.Syscall(procDeleteObject.Addr(), 1, uintptr(obj), 0, 0)
+	r1, _, _ := syscall.SyscallN(procDeleteObject.Addr(), uintptr(obj))
 	if r1 != 0 {
 		return nil
 	} else {
-		return errors.New("The specified handle is not valid or is currently selected into a DC.")
+		return errors.New("the specified handle is not valid or is currently selected into a DC")
 	}
 }
 
