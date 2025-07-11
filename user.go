@@ -149,18 +149,17 @@ func MessageBox(hWnd HWND, Text string, Caption string, Type uint32) (ret int32,
 	if err != nil {
 		return
 	}
-	r1, _, e1 := syscall.Syscall6(procMessageBox.Addr(), 4,
+	r1, _, e1 := syscall.SyscallN(procMessageBox.Addr(),
 		uintptr(hWnd),
 		uintptr(unsafe.Pointer(pText)),
 		uintptr(unsafe.Pointer(pCaption)),
-		uintptr(Type),
-		0, 0)
+		uintptr(Type))
 	n := int32(r1)
 	if n == 0 {
 		if e1 != 0 {
 			err = error(WinErrorCode(e1))
 		} else {
-			err = errors.New("winapi: MessageBox failed.")
+			err = errors.New("winapi: MessageBox failed")
 		}
 	} else {
 		ret = n
@@ -206,7 +205,7 @@ func WinErrorAssert(err error) {
 }
 
 func DefWindowProc(hWnd HWND, message uint32, wParam uintptr, lParam uintptr) uintptr {
-	ret, _, _ := syscall.Syscall6(procDefWindowProc.Addr(), 4, uintptr(hWnd), uintptr(message), wParam, lParam, 0, 0)
+	ret, _, _ := syscall.SyscallN(procDefWindowProc.Addr(), uintptr(hWnd), uintptr(message), wParam, lParam)
 	return ret
 }
 
@@ -258,7 +257,8 @@ const (
 )
 
 // 返回值：如果窗口事先是可见的，返回true
-//       如果窗口事先是隐藏的，返回false
+//
+//	如果窗口事先是隐藏的，返回false
 func ShowWindow(hWnd HWND, CmdShow int32) bool {
 	r1, _, _ := syscall.Syscall(procShowWindow.Addr(), 2, uintptr(hWnd), uintptr(CmdShow), 0)
 	return r1 != 0
