@@ -12,16 +12,16 @@ import (
 )
 
 var (
-	dll_Advapi *syscall.LazyDLL = syscall.NewLazyDLL("Advapi32.dll")
+	dllAdvapi *syscall.LazyDLL = syscall.NewLazyDLL("Advapi32.dll")
 )
 
 var (
-	procRegCreateKeyEx  *syscall.LazyProc = dll_Advapi.NewProc("RegCreateKeyExW")
-	procRegOpenKeyEx    *syscall.LazyProc = dll_Advapi.NewProc("RegRegOpenKeyExW")
-	procRegSetValueEx   *syscall.LazyProc = dll_Advapi.NewProc("RegSetValueExW")
-	procRegCloseKey     *syscall.LazyProc = dll_Advapi.NewProc("RegCloseKey")
-	procRegDeleteKeyEx  *syscall.LazyProc = dll_Advapi.NewProc("RegDeleteKeyExW")
-	procRegQueryValueEx *syscall.LazyProc = dll_Advapi.NewProc("RegQueryValueExW")
+	procRegCreateKeyEx  *syscall.LazyProc = dllAdvapi.NewProc("RegCreateKeyExW")
+	procRegOpenKeyEx    *syscall.LazyProc = dllAdvapi.NewProc("RegRegOpenKeyExW")
+	procRegSetValueEx   *syscall.LazyProc = dllAdvapi.NewProc("RegSetValueExW")
+	procRegCloseKey     *syscall.LazyProc = dllAdvapi.NewProc("RegCloseKey")
+	procRegDeleteKeyEx  *syscall.LazyProc = dllAdvapi.NewProc("RegDeleteKeyExW")
+	procRegQueryValueEx *syscall.LazyProc = dllAdvapi.NewProc("RegQueryValueExW")
 )
 
 type HKEY uintptr
