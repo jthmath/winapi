@@ -62,11 +62,3 @@ var (
 	procCreatePopupMenu = dllUser.NewProc("CreatePopupMenu")
 	procDestroyMenu     = dllUser.NewProc("DestroyMenu")
 )
-
-var (
-	dllComdlg = syscall.NewLazyDLL("comdlg32.dll")
-
-	procGetSaveFileName      = dllComdlg.NewProc("GetSaveFileNameW")
-	procGetOpenFileName      = dllComdlg.NewProc("GetOpenFileNameW")
-	procCommDlgExtendedError = dllComdlg.NewProc("CommDlgExtendedError")
-)

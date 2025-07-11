@@ -37,7 +37,7 @@ type WNDCLASS struct {
 	HIcon         HICON
 	HCursor       HCURSOR
 	HbrBackground HBRUSH
-	Menu          interface{}
+	Menu          Resource
 	PszClassName  string
 	HIconSmall    HICON
 }
@@ -61,36 +61,20 @@ func newWndProc(proc WNDPROC) uintptr {
 	return syscall.NewCallback(proc)
 }
 
-func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
+func RegisterClass(pWndClass *WNDCLASS) (cls uint16, err error) {
 	if pWndClass == nil {
 		err = errors.New("winapi: RegisterClass: pWndClass must not be nil")
 		return
 	}
 
-	_pClassName, err := syscall.UTF16PtrFromString(pWndClass.PszClassName)
+	winStrClassName, err := syscall.UTF16PtrFromString(pWndClass.PszClassName)
 	if err != nil {
 		return
 	}
 
-	if pWndClass.Menu == nil {
-		err = errors.New("winapi: RegisterClass: can't find Menu")
+	winStrMenuName, err := pWndClass.Menu.GetWinStr()
+	if err != nil {
 		return
-	}
-
-	var Menu uintptr = 70000
-
-	var _pMenuName *uint16 = nil
-
-	switch v := pWndClass.Menu.(type) {
-	case uint16:
-		Menu = MakeIntResource(v)
-	case string:
-		_pMenuName, err = syscall.UTF16PtrFromString(v)
-		if err != nil {
-			return
-		}
-	default:
-		return 0, errors.New("winapi: RegisterClass: Menu's type must be uint16 or string")
 	}
 
 	var wc _WNDCLASS
@@ -103,27 +87,18 @@ func RegisterClass(pWndClass *WNDCLASS) (atom uint16, err error) {
 	wc.hIcon = pWndClass.HIcon
 	wc.hCursor = pWndClass.HCursor
 	wc.hbrBackground = pWndClass.HbrBackground
-	if _pClassName != nil {
-		wc.pszMenuName = _pMenuName
-	} else {
-		wc.pszMenuName = (*uint16)(unsafe.Pointer(Menu))
-	}
-	wc.pszClassName = _pClassName
+	wc.pszMenuName = winStrMenuName
+	wc.pszClassName = winStrClassName
 	wc.hIconSmall = pWndClass.HIconSmall
 
 	r1, _, e1 := syscall.SyscallN(procRegisterClass.Addr(), 1, uintptr(unsafe.Pointer(&wc)))
 	n := uint16(r1)
 	if n == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: RegisterClass failed")
-		}
-	} else {
-		atom = n
+		err = MakeFromWinError(e1)
+		return
 	}
-	return
+
+	return n, nil
 }
 
 const (
@@ -155,15 +130,11 @@ func MessageBox(hWnd HWND, text string, caption string, mbType uint32) (ret int3
 		uintptr(mbType))
 	n := int32(r1)
 	if n == 0 {
-		if e1 != 0 {
-			err = error(WinErrorCode(e1))
-		} else {
-			err = errors.New("winapi: MessageBox failed")
-		}
-	} else {
-		ret = n
+		err = MakeFromWinError(e1)
+		return
 	}
-	return
+
+	return n, nil
 }
 
 func DefWindowProc(hWnd HWND, message uint32, wParam uintptr, lParam uintptr) uintptr {
@@ -189,15 +160,11 @@ func CreateWindow(className string, windowName string, style uint32, exStyle uin
 		uintptr(x), uintptr(y), uintptr(width), uintptr(height),
 		uintptr(wndParent), uintptr(menu), uintptr(inst), uintptr(param))
 	if r1 == 0 {
-		if e1 != 0 {
-			err = error(e1)
-		} else {
-			err = errors.New("winapi: CreateWindow failed")
-		}
-	} else {
-		hWnd = HWND(r1)
+		err = MakeFromWinError(e1)
+		return
 	}
-	return
+
+	return HWND(r1), nil
 }
 
 const (
@@ -243,19 +210,14 @@ func DestroyWindow(hWnd HWND) (err error) {
 	return nil
 }
 
-func _LoadString(Inst HINSTANCE, id uint16, Buffer *uint16, BufferMax int32) (int32, error) {
+func _LoadString(inst HINSTANCE, id uint16, buffer_ptr *uint16, buffer_max int32) (int32, error) {
 	r1, _, e1 := syscall.SyscallN(procLoadString.Addr(),
-		uintptr(Inst), uintptr(id), uintptr(unsafe.Pointer(Buffer)), uintptr(BufferMax))
+		uintptr(inst), uintptr(id), uintptr(unsafe.Pointer(buffer_ptr)), uintptr(buffer_max))
 	r := int32(r1)
 	if r > 0 {
 		return r, nil
 	} else {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			return 0, wec
-		} else {
-			return 0, errors.New("winapi: LoadString failed")
-		}
+		return 0, MakeFromWinError(e1)
 	}
 }
 
@@ -281,36 +243,18 @@ func LoadString(hInstance HINSTANCE, id uint16) (string, error) {
 	}
 }
 
-func LoadBitmapById(hInst HINSTANCE, id uint16) (HBITMAP, error) {
-	r1, _, e1 := syscall.SyscallN(procLoadBitmap.Addr(), uintptr(hInst), MakeIntResource(id))
-	if r1 != 0 {
-		return HBITMAP(r1), nil
-	} else {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			return 0, wec
-		} else {
-			return 0, errors.New("winapi: LoadBitmapById failed")
-		}
-	}
-}
-
-func LoadBitmapByName(hInst HINSTANCE, Name string) (HBITMAP, error) {
-	p, err := syscall.UTF16PtrFromString(Name)
+func LoadBitmap[R ResourceConcept](hInst HINSTANCE, bigmapName R) (HBITMAP, error) {
+	res := MakeResource(bigmapName)
+	winStr, err := res.GetWinStr()
 	if err != nil {
 		return 0, err
 	}
-	r1, _, e1 := syscall.Syscall(procLoadBitmap.Addr(), 2,
-		uintptr(hInst), uintptr(unsafe.Pointer(p)), 0)
+
+	r1, _, e1 := syscall.SyscallN(procLoadBitmap.Addr(), uintptr(hInst), uintptr(unsafe.Pointer(winStr)))
 	if r1 != 0 {
 		return HBITMAP(r1), nil
 	} else {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			return 0, wec
-		} else {
-			return 0, errors.New("winapi: LoadBitmapByName failed")
-		}
+		return 0, MakeFromWinError(e1)
 	}
 }
 
@@ -318,73 +262,34 @@ const (
 	IDC_ARROW = 32512
 )
 
-func LoadCursorById(hinst HINSTANCE, id uint16) (cursor HCURSOR, err error) {
-	r1, _, e1 := syscall.SyscallN(procLoadCursor.Addr(), uintptr(hinst), MakeIntResource(id))
-	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: LoadCursorById failed")
-		}
-	} else {
-		cursor = HCURSOR(r1)
-	}
-	return
-}
-
-func LoadCursorByName(hinst HINSTANCE, name string) (cursor HCURSOR, err error) {
-	pName, err := syscall.UTF16PtrFromString(name)
+func LoadCursor[R ResourceConcept](hinst HINSTANCE, cursorName R) (cursor HCURSOR, err error) {
+	res := MakeResource(cursorName)
+	winStr, err := res.GetWinStr()
 	if err != nil {
-		return
+		return 0, err
 	}
 
-	r1, _, e1 := syscall.SyscallN(procLoadCursor.Addr(), uintptr(hinst), uintptr(unsafe.Pointer(pName)))
-	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: LoadCursorByName failed")
-		}
+	r1, _, e1 := syscall.SyscallN(procLoadCursor.Addr(), uintptr(hinst), uintptr(unsafe.Pointer(winStr)))
+	if r1 != 0 {
+		return HCURSOR(r1), nil
 	} else {
-		cursor = HCURSOR(r1)
+		return 0, MakeFromWinError(e1)
 	}
-	return
 }
 
-func LoadIconById(hinst HINSTANCE, id uint16) (icon HICON, err error) {
-	r1, _, e1 := syscall.SyscallN(procLoadIcon.Addr(), uintptr(hinst), MakeIntResource(id))
-	if r1 == 0 {
-		if e1 != 0 {
-			err = error(e1)
-		} else {
-			err = errors.New("winapi: LoadIconById failed")
-		}
-	} else {
-		icon = HICON(r1)
-	}
-	return
-}
-
-func LoadIconByName(hinst HINSTANCE, name string) (icon HICON, err error) {
-	pName, err := syscall.UTF16PtrFromString(name)
+func LoadIcon[R ResourceConcept](hinst HINSTANCE, iconName R) (icon HICON, err error) {
+	res := MakeResource(iconName)
+	winStr, err := res.GetWinStr()
 	if err != nil {
-		return
+		return 0, err
 	}
 
-	r1, _, e1 := syscall.SyscallN(procLoadIcon.Addr(), uintptr(hinst), uintptr(unsafe.Pointer(pName)))
-	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: LoadIconByName failed")
-		}
+	r1, _, e1 := syscall.SyscallN(procLoadIcon.Addr(), uintptr(hinst), uintptr(unsafe.Pointer(winStr)))
+	if r1 != 0 {
+		return HICON(r1), nil
 	} else {
-		icon = HICON(r1)
+		return 0, MakeFromWinError(e1)
 	}
-	return
 }
 
 const ( // LoadImage函数的uType参数
@@ -405,48 +310,26 @@ const ( // LoadImage函数的fuLoad参数
 	LR_VGACOLOR         = 0x00000080
 )
 
-func LoadImageById(hinst HINSTANCE, id uint16, Type uint32,
+func LoadImage[R ResourceConcept](hinst HINSTANCE, name R, Type uint32,
 	cxDesired int32, cyDesired int32, fLoad uint32) (hImage HANDLE, err error) {
-	r1, _, e1 := syscall.SyscallN(procLoadImage.Addr(),
-		uintptr(hinst),
-		MakeIntResource(id),
-		uintptr(Type),
-		uintptr(cxDesired),
-		uintptr(cyDesired),
-		uintptr(fLoad))
-	if r1 == 0 {
-		err = e1
-		return
-	}
-
-	hImage = HANDLE(r1)
-	return
-}
-
-func LoadImageByName(hinst HINSTANCE, name string, Type uint32,
-	cxDesired int32, cyDesired int32, fLoad uint32) (hImage HANDLE, err error) {
-	pName, err := syscall.UTF16PtrFromString(name)
+	res := MakeResource(name)
+	winStr, err := res.GetWinStr()
 	if err != nil {
-		return
+		return 0, err
 	}
+
 	r1, _, e1 := syscall.SyscallN(procLoadImage.Addr(),
 		uintptr(hinst),
-		uintptr(unsafe.Pointer(pName)),
+		uintptr(unsafe.Pointer(winStr)),
 		uintptr(Type),
 		uintptr(cxDesired),
 		uintptr(cyDesired),
 		uintptr(fLoad))
-	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: LoadImageByName failed")
-		}
+	if r1 != 0 {
+		return HANDLE(r1), nil
 	} else {
-		hImage = HANDLE(r1)
+		return 0, MakeFromWinError(e1)
 	}
-	return
 }
 
 const (

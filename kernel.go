@@ -3,18 +3,17 @@
 package winapi
 
 import (
-	"errors"
 	"syscall"
 	"unsafe"
 )
 
-func GetLastError() WinErrorCode {
-	ret, _, _ := syscall.Syscall(procGetLastError.Addr(), 0, 0, 0, 0)
-	return WinErrorCode(uint32(ret))
+func GetLastError() uint32 {
+	ret, _, _ := syscall.SyscallN(procGetLastError.Addr())
+	return uint32(ret)
 }
 
 func ExitProcess(ExitCode uint32) {
-	syscall.Syscall(procExitProcess.Addr(), 1, uintptr(ExitCode), 0, 0)
+	syscall.SyscallN(procExitProcess.Addr(), uintptr(ExitCode))
 }
 
 func GetModuleHandle(ModuleName string) (h HINSTANCE, err error) {
@@ -32,28 +31,21 @@ func GetModuleHandle(ModuleName string) (h HINSTANCE, err error) {
 		}
 	}
 
-	r1, _, e1 := syscall.Syscall(procGetModuleHandle.Addr(), 1, a, 0, 0)
+	r1, _, e1 := syscall.SyscallN(procGetModuleHandle.Addr(), a)
 	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("GetModuleHandle failed.")
-		}
-	} else {
-		h = HINSTANCE(r1)
+		err = MakeFromWinError(e1)
+		return
 	}
+
+	h = HINSTANCE(r1)
 	return
 }
 
-func CloseHandle(h HANDLE) (err error) {
-	r1, _, e1 := syscall.Syscall(procCloseHandle.Addr(), 1, uintptr(h), 0, 0)
+func CloseHandle(h HANDLE) error {
+	r1, _, e1 := syscall.SyscallN(procCloseHandle.Addr(), uintptr(h))
 	if r1 == 0 {
-		if e1 != 0 {
-			err = error(e1)
-		} else {
-			err = errors.New("CloseHandle failed.")
-		}
+		return MakeFromWinError(e1)
 	}
-	return
+
+	return nil
 }

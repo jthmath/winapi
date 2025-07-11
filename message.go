@@ -44,31 +44,30 @@ type MSG struct {
 }
 
 func GetMessage(pMsg *MSG, hWnd HWND, wMsgFilterMin uint32, wMsgFilterMax uint32) int32 {
-	r1, _, _ := syscall.Syscall6(procGetMessage.Addr(), 4,
+	r1, _, _ := syscall.SyscallN(procGetMessage.Addr(),
 		uintptr(unsafe.Pointer(pMsg)),
 		uintptr(hWnd),
 		uintptr(wMsgFilterMin),
-		uintptr(wMsgFilterMax),
-		0, 0)
+		uintptr(wMsgFilterMax))
 	return int32(r1)
 }
 
 func TranslateMessage(pMsg *MSG) error {
-	r1, _, _ := syscall.Syscall(procTranslateMessage.Addr(), 1, uintptr(unsafe.Pointer(pMsg)), 0, 0)
+	r1, _, _ := syscall.SyscallN(procTranslateMessage.Addr(), uintptr(unsafe.Pointer(pMsg)))
 	if r1 == 0 {
-		return errors.New("winapi: TranslateMessage failed.")
+		return errors.New("winapi: TranslateMessage failed")
 	} else {
 		return nil
 	}
 }
 
 func DispatchMessage(pMsg *MSG) uintptr {
-	r1, _, _ := syscall.Syscall(procDispatchMessage.Addr(), 1, uintptr(unsafe.Pointer(pMsg)), 0, 0)
+	r1, _, _ := syscall.SyscallN(procDispatchMessage.Addr(), uintptr(unsafe.Pointer(pMsg)))
 	return r1
 }
 
 func PostQuitMessage(ExitCode int32) {
-	syscall.Syscall(procPostQuitMessage.Addr(), 1, uintptr(ExitCode), 0, 0)
+	syscall.SyscallN(procPostQuitMessage.Addr(), uintptr(ExitCode))
 }
 
 func RegisterWindowMessage(str string) (message uint32, err error) {
@@ -77,18 +76,12 @@ func RegisterWindowMessage(str string) (message uint32, err error) {
 		return
 	}
 
-	r1, _, e1 := syscall.Syscall(procRegisterWindowMessage.Addr(), 1,
-		uintptr(unsafe.Pointer(p)),
-		0, 0)
+	r1, _, e1 := syscall.SyscallN(procRegisterWindowMessage.Addr(), uintptr(unsafe.Pointer(p)))
 	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: RegisterWindowMessage failed.")
-		}
-	} else {
-		message = uint32(r1)
+		err = MakeFromWinError(e1)
+		return
 	}
+
+	message = uint32(r1)
 	return
 }
