@@ -166,30 +166,6 @@ func MessageBox(hWnd HWND, text string, caption string, mbType uint32) (ret int3
 	return
 }
 
-func MustMessageBox(hWnd HWND, Text string, Caption string, Type uint32) (ret int32) {
-	ret, err := MessageBox(hWnd, Text, Caption, Type)
-	if err != nil {
-		panic(err)
-	}
-	return
-}
-
-func ErrorBox(err error) error {
-	var e error
-	if err == nil {
-		_, e = MessageBox(0, "<nil>", "error", MB_OK)
-	} else {
-		_, e = MessageBox(0, err.Error(), "error", MB_OK|MB_ICONERROR)
-	}
-	return e
-}
-
-func MustErrorBox(err error) {
-	if e := ErrorBox(err); e != nil {
-		panic(e)
-	}
-}
-
 func DefWindowProc(hWnd HWND, message uint32, wParam uintptr, lParam uintptr) uintptr {
 	ret, _, _ := syscall.SyscallN(procDefWindowProc.Addr(), uintptr(hWnd), uintptr(message), wParam, lParam)
 	return ret
@@ -197,21 +173,21 @@ func DefWindowProc(hWnd HWND, message uint32, wParam uintptr, lParam uintptr) ui
 
 const CW_USEDEFAULT int32 = ^int32(0x7FFFFFFF) // 0x80000000
 
-func CreateWindow(ClassName string, WindowName string, Style uint32, ExStyle uint32,
-	X int32, Y int32, Width int32, Height int32,
-	WndParent HWND, Menu HMENU, inst HINSTANCE, Param uintptr) (hWnd HWND, err error) {
-	pClassName, err := syscall.UTF16PtrFromString(ClassName)
+func CreateWindow(className string, windowName string, style uint32, exStyle uint32,
+	x int32, y int32, width int32, height int32,
+	wndParent HWND, menu HMENU, inst HINSTANCE, param uintptr) (hWnd HWND, err error) {
+	pClassName, err := syscall.UTF16PtrFromString(className)
 	if err != nil {
 		return
 	}
-	pWindowName, err := syscall.UTF16PtrFromString(WindowName)
+	pWindowName, err := syscall.UTF16PtrFromString(windowName)
 	if err != nil {
 		return
 	}
 	r1, _, e1 := syscall.SyscallN(procCreateWindow.Addr(),
-		uintptr(ExStyle), uintptr(unsafe.Pointer(pClassName)), uintptr(unsafe.Pointer(pWindowName)), uintptr(Style),
-		uintptr(X), uintptr(Y), uintptr(Width), uintptr(Height),
-		uintptr(WndParent), uintptr(Menu), uintptr(inst), uintptr(Param))
+		uintptr(exStyle), uintptr(unsafe.Pointer(pClassName)), uintptr(unsafe.Pointer(pWindowName)), uintptr(style),
+		uintptr(x), uintptr(y), uintptr(width), uintptr(height),
+		uintptr(wndParent), uintptr(menu), uintptr(inst), uintptr(param))
 	if r1 == 0 {
 		if e1 != 0 {
 			err = error(e1)
@@ -262,7 +238,7 @@ func UpdateWindow(hWnd HWND) error {
 func DestroyWindow(hWnd HWND) (err error) {
 	r1, _, e1 := syscall.SyscallN(procDestroyWindow.Addr(), uintptr(hWnd))
 	if n := int32(r1); n == 0 {
-		return e1
+		return MakeFromWinError(e1)
 	}
 	return nil
 }

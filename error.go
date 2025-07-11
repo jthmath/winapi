@@ -1,28 +1,29 @@
 //go:build windows
 
-/*
-错误相关，包括 Windows Error Code 和 HRESULT
-*/
-
 package winapi
 
 import (
 	"fmt"
+	"syscall"
 )
 
 // 1. Windows Error Code
 
 type WinErrorCode uint32
 
-func (this WinErrorCode) Error() string {
+func (ec WinErrorCode) Error() string {
 	var flags uint32 = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ARGUMENT_ARRAY | FORMAT_MESSAGE_IGNORE_INSERTS
-	str, err := FormatMessage(flags, nil, uint32(this), 0, nil)
-	n := uint32(this)
+	str, err := FormatMessage(flags, nil, uint32(ec), 0, nil)
+	n := uint32(ec)
 	if err == nil {
 		return fmt.Sprintf("winapi error: %d(0x%08X) - ", n, n) + str
 	} else {
 		return fmt.Sprintf("winapi error: %d(0x%08X)", n, n)
 	}
+}
+
+func MakeFromWinError(e syscall.Errno) error {
+	return WinErrorCode(e)
 }
 
 // 2. HRESULT
