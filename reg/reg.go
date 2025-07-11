@@ -76,18 +76,18 @@ const (
 
 func CreateKey(hKey HKEY, SubKey string, Reserved uint32, Class string,
 	Options uint32, samDesired REGSAM,
-	sa *winapi.SecurityAttributes) (hkResult HKEY, Disposition uint32, err error) {
+	sa *winapi.SECURITY_ATTRIBUTES) (hkResult HKEY, Disposition uint32, err error) {
 	pSubKey, err := syscall.UTF16PtrFromString(SubKey)
 	if err != nil {
 		return
 	}
-	pClass, err := winapi.SpecUTF16PtrFromString(Class)
+	pClass, err := syscall.UTF16PtrFromString(Class)
 	if err != nil {
 		return
 	}
 	var hKeyResult HKEY
 	var disposition uint32
-	r1, _, e1 := syscall.Syscall9(procRegCreateKeyEx.Addr(), 9,
+	r1, _, e1 := syscall.SyscallN(procRegCreateKeyEx.Addr(),
 		uintptr(hKey),
 		uintptr(unsafe.Pointer(pSubKey)),
 		uintptr(Reserved),
@@ -113,7 +113,7 @@ func CreateKey(hKey HKEY, SubKey string, Reserved uint32, Class string,
 }
 
 func SetValue(Key HKEY, ValueName string, Reserved uint32,
-	Type uint32, Data interface{}) error {
+	Type uint32, Data any) error {
 	pValueName, err := syscall.UTF16PtrFromString(ValueName)
 	if err != nil {
 		return err
@@ -184,7 +184,7 @@ func SetValue(Key HKEY, ValueName string, Reserved uint32,
 
 func _SetValue(Key HKEY, ValueName *uint16, Reserved uint32,
 	Type uint32, Data *byte, cbData uint32) (err error) {
-	r1, _, e1 := syscall.Syscall6(procRegSetValueEx.Addr(), 6,
+	r1, _, e1 := syscall.SyscallN(procRegSetValueEx.Addr(),
 		uintptr(Key),
 		uintptr(unsafe.Pointer(ValueName)),
 		uintptr(Reserved),
@@ -203,13 +203,12 @@ func _SetValue(Key HKEY, ValueName *uint16, Reserved uint32,
 }
 
 func CloseKey(Key HKEY) (err error) {
-	r1, _, e1 := syscall.Syscall(procRegCloseKey.Addr(), 1,
-		uintptr(unsafe.Pointer(Key)), 0, 0)
+	r1, _, e1 := syscall.SyscallN(procRegCloseKey.Addr(), uintptr(unsafe.Pointer(Key)))
 	if int32(r1) != ERROR_SUCCESS {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = errors.New("CloseKey failed.")
+			err = errors.New("CloseKey failed")
 		}
 	}
 	return
@@ -220,24 +219,23 @@ func DeleteKey(Key HKEY, SubKey string, samDesired REGSAM, Reserved uint32) (err
 	if err != nil {
 		return
 	}
-	r1, _, e1 := syscall.Syscall6(procRegSetValueEx.Addr(), 4,
+	r1, _, e1 := syscall.SyscallN(procRegSetValueEx.Addr(),
 		uintptr(Key),
 		uintptr(unsafe.Pointer(pSubKey)),
 		uintptr(samDesired),
-		uintptr(Reserved),
-		0, 0)
+		uintptr(Reserved))
 	n := int32(r1)
 	if n != ERROR_SUCCESS {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
-			err = errors.New("DeleteKey failed.")
+			err = errors.New("DeleteKey failed")
 		}
 	}
 	return
 }
 
-func QueryValue(Key HKEY, ValueName string) (Type uint32, Data interface{}, err error) {
+func QueryValue(Key HKEY, ValueName string) (Type uint32, Data any, err error) {
 	pValueName, err := syscall.UTF16PtrFromString(ValueName)
 	if err != nil {
 		return
@@ -313,7 +311,7 @@ func QueryValue(Key HKEY, ValueName string) (Type uint32, Data interface{}, err 
 
 func _QueryValue(Key HKEY, ValueName *uint16, pType *uint32,
 	pData *byte, pcbData *uint32) error {
-	r1, _, _ := syscall.Syscall6(procRegQueryValueEx.Addr(), 6,
+	r1, _, _ := syscall.SyscallN(procRegQueryValueEx.Addr(),
 		uintptr(Key),
 		uintptr(unsafe.Pointer(ValueName)),
 		uintptr(0),
@@ -322,7 +320,7 @@ func _QueryValue(Key HKEY, ValueName *uint16, pType *uint32,
 		uintptr(unsafe.Pointer(pcbData)))
 	n := int32(r1)
 	if n != ERROR_SUCCESS {
-		return errors.New("_QueryValue failed.")
+		return errors.New("_QueryValue failed")
 	} else {
 		return nil
 	}
