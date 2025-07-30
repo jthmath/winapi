@@ -38,14 +38,10 @@ func BitBlt(hdcDest HDC, nXDest int32, nYdest int32, nWidth int32, nHeight int32
 		uintptr(hdcSrc), uintptr(nXSrc), uintptr(nYSrc),
 		uintptr(Rop))
 	if r1 == 0 {
-		if e1 != 0 {
-			return error(e1)
-		} else {
-			return errors.New("BitBlt failed")
-		}
-	} else {
-		return nil
+		return MakeFromWinError(e1)
 	}
+
+	return nil
 }
 
 func DeleteObject(obj HGDIOBJ) error {

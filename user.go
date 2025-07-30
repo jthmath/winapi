@@ -1,7 +1,5 @@
 //go:build windows
 
-// 此文件包含 user32.dll 中的函数，其中，关于【消息】的另放在 message.go 中
-
 package winapi
 
 import (
@@ -185,18 +183,20 @@ const (
 	SW_MAX             int32 = 11
 )
 
-// 返回值：如果窗口事先是可见的，返回true
+// ShowWindow
+// Sets the specified window's show state.
 //
-//	如果窗口事先是隐藏的，返回false
-func ShowWindow(hWnd HWND, CmdShow int32) bool {
+// If the window was previously visible, the return value is nonzero.
+// If the window was previously hidden, the return value is zero.
+func ShowWindow(hWnd HWND, CmdShow int32) int32 {
 	r1, _, _ := syscall.SyscallN(procShowWindow.Addr(), uintptr(hWnd), uintptr(CmdShow))
-	return r1 != 0
+	return int32(r1)
 }
 
 func UpdateWindow(hWnd HWND) error {
 	r1, _, _ := syscall.SyscallN(procUpdateWindow.Addr(), uintptr(hWnd))
 	if r1 == 0 {
-		return errors.New("winapi: UpdateWindow failed") // 该函数没有对应的GetLastError值
+		return errors.New("winapi: UpdateWindow failed")
 	} else {
 		return nil
 	}
@@ -292,13 +292,13 @@ func LoadIcon[R ResourceConcept](hinst HINSTANCE, iconName R) (icon HICON, err e
 	}
 }
 
-const ( // LoadImage函数的uType参数
+const (
 	IMAGE_BITMAP = 0
 	IMAGE_CURSOR = 2
 	IMAGE_ICON   = 1
 )
 
-const ( // LoadImage函数的fuLoad参数
+const (
 	LR_CREATEDIBSECTION = 0x00002000
 	LR_DEFAULTCOLOR     = 0x00000000
 	LR_DEFAULTSIZE      = 0x00000040
