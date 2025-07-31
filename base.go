@@ -3,13 +3,11 @@
 package winapi
 
 import (
-	"fmt"
-	"syscall"
 	"unicode/utf16"
 	"unsafe"
 )
 
-//  These are flags supported through CreateFile (W7) and CreateFile2 (W8 and beyond)
+// These are flags supported through CreateFile (W7) and CreateFile2 (W8 and beyond)
 const (
 	FILE_FLAG_WRITE_THROUGH       = 0x80000000
 	FILE_FLAG_OVERLAPPED          = 0x40000000
@@ -34,7 +32,7 @@ const (
 	FORMAT_MESSAGE_MAX_WIDTH_MASK = 0x000000FF
 )
 
-func FormatMessage(flags uint32, msgsrc interface{}, msgid uint32, langid uint32, args *byte) (string, error) {
+func FormatMessage(flags uint32, msgsrc any, msgid uint32, langid uint32, args *byte) (string, error) {
 	var b [300]uint16
 	n, err := _FormatMessage(flags, msgsrc, msgid, langid, &b[0], 300, args)
 	if err != nil {
@@ -45,24 +43,25 @@ func FormatMessage(flags uint32, msgsrc interface{}, msgid uint32, langid uint32
 	return string(utf16.Decode(b[:n])), nil
 }
 
-func _FormatMessage(flags uint32, msgsrc interface{}, msgid uint32, langid uint32, buf *uint16, nSize uint32, args *byte) (n uint32, err error) {
-	r0, _, e1 := syscall.Syscall9(procFormatMessage.Addr(), 7,
-		uintptr(flags), uintptr(0), uintptr(msgid), uintptr(langid),
+func _FormatMessage(flags uint32, _ any, msgid uint32, langid uint32, buf *uint16, nSize uint32, args *byte) (n uint32, err error) {
+	r0, _, e1 := procFormatMessage.Call(uintptr(flags), uintptr(0), uintptr(msgid), uintptr(langid),
 		uintptr(unsafe.Pointer(buf)), uintptr(nSize),
-		uintptr(unsafe.Pointer(args)), 0, 0)
+		uintptr(unsafe.Pointer(args)))
+
 	n = uint32(r0)
 	if n == 0 {
-		err = fmt.Errorf("winapi._FormatMessage error: %d", uint32(e1))
+		err = e1
+		return
 	}
 	return
 }
 
 /*
-typedef struct _SECURITY_ATTRIBUTES {
-    DWORD  nLength;
-    void   *pSecurityDescriptor;
-    BOOL   bInheritHandle;
-} SECURITY_ATTRIBUTES;
+	typedef struct _SECURITY_ATTRIBUTES {
+	    DWORD  nLength;
+	    void   *pSecurityDescriptor;
+	    BOOL   bInheritHandle;
+	} SECURITY_ATTRIBUTES;
 */
 type SECURITY_ATTRIBUTES struct {
 	Length             uint32

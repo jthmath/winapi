@@ -3,7 +3,6 @@
 package winapi
 
 import (
-	"errors"
 	"syscall"
 	"unsafe"
 )
@@ -64,59 +63,43 @@ func AppendMenu(hMenu HMENU, Flags uint32, IdNewItem uintptr, NewItem string) er
 }
 
 func _AppendMenu(hMenu HMENU, Flags uint32, IdNewItem uintptr, NewItem *uint16) (err error) {
-	r1, _, e1 := syscall.Syscall6(procAppendMenu.Addr(), 4,
-		uintptr(hMenu), uintptr(Flags), IdNewItem, uintptr(unsafe.Pointer(NewItem)),
-		0, 0)
+	r1, _, e1 := syscall.SyscallN(procAppendMenu.Addr(),
+		uintptr(hMenu), uintptr(Flags), IdNewItem, uintptr(unsafe.Pointer(NewItem)))
 	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: AppendMenu failed.")
-		}
+		return MakeFromWinError(e1)
 	}
 	return
 }
 
 func CreateMenu() (hMenu HMENU, err error) {
-	r1, _, e1 := syscall.Syscall(procCreateMenu.Addr(), 0, 0, 0, 0)
+	r1, _, e1 := syscall.SyscallN(procCreateMenu.Addr())
 	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: CreateMenu failed.")
-		}
-	} else {
-		hMenu = HMENU(r1)
+		err = MakeFromWinError(e1)
+		return
 	}
+
+	hMenu = HMENU(r1)
 	return
 }
 
 func CreatePopupMenu() (hMenu HMENU, err error) {
-	r1, _, e1 := syscall.Syscall(procCreatePopupMenu.Addr(), 0, 0, 0, 0)
+	r1, _, e1 := syscall.SyscallN(procCreatePopupMenu.Addr())
 	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: CreatePopupMenu failed.")
-		}
-	} else {
-		hMenu = HMENU(r1)
+		err = MakeFromWinError(e1)
+		return
 	}
+
+	hMenu = HMENU(r1)
 	return
 }
 
 func DestroyMenu(hMenu HMENU) (err error) {
-	r1, _, e1 := syscall.Syscall(procDestroyMenu.Addr(), 1, uintptr(hMenu), 0, 0)
+	r1, _, e1 := syscall.SyscallN(procDestroyMenu.Addr(), uintptr(hMenu))
 	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("winapi: DestroyMenu failed.")
-		}
+		err = MakeFromWinError(e1)
+		return
 	}
+
+	err = nil
 	return
 }

@@ -4,10 +4,6 @@ package winapi
 
 type HANDLE uintptr
 
-type __HWND struct {
-	unused int
-}
-
 type HWND uintptr
 
 type HMENU uintptr

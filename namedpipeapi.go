@@ -3,7 +3,6 @@
 package winapi
 
 import (
-	"errors"
 	"syscall"
 	"time"
 	"unsafe"
@@ -38,17 +37,12 @@ const (
 const PIPE_UNLIMITED_INSTANCES = 255
 
 func ConnectNamedPipe(hNamedPipe HANDLE, po *OVERLAPPED) (err error) {
-	r1, _, e1 := syscall.Syscall(procConnectNamedPipe.Addr(), 2,
-		uintptr(hNamedPipe), uintptr(unsafe.Pointer(po)), 0)
+	r1, _, e1 := syscall.SyscallN(procConnectNamedPipe.Addr(), uintptr(hNamedPipe), uintptr(unsafe.Pointer(po)))
 	if r1 == 0 {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("ConnectNamedPipe failed.")
-		}
+		return MakeFromWinError(e1)
 	}
-	return
+
+	return nil
 }
 
 func CreateNamedPipe(
@@ -75,7 +69,7 @@ func CreateNamedPipe(
 func _CreateNamedPipe(pName *uint16, dwOpenMode uint32, dwPipeMode uint32,
 	nMaxInstances uint32, nOutBufferSize uint32, nInBufferSize uint32,
 	nDefaultTimeOut uint32, pSecurityAttributes *SECURITY_ATTRIBUTES) (h HANDLE, err error) {
-	r1, _, e1 := syscall.Syscall9(procCreateNamedPipe.Addr(), 8,
+	r1, _, e1 := syscall.SyscallN(procCreateNamedPipe.Addr(),
 		uintptr(unsafe.Pointer(pName)),
 		uintptr(dwOpenMode),
 		uintptr(dwPipeMode),
@@ -83,17 +77,13 @@ func _CreateNamedPipe(pName *uint16, dwOpenMode uint32, dwPipeMode uint32,
 		uintptr(nOutBufferSize),
 		uintptr(nInBufferSize),
 		uintptr(nDefaultTimeOut),
-		uintptr(unsafe.Pointer(pSecurityAttributes)),
-		0)
+		uintptr(unsafe.Pointer(pSecurityAttributes)))
 	if h == INVALID_HANDLE_VALUE {
-		wec := WinErrorCode(e1)
-		if wec != 0 {
-			err = wec
-		} else {
-			err = errors.New("CreateNamedPipe failed.")
-		}
-	} else {
-		h = HANDLE(r1)
+		err = MakeFromWinError(e1)
+		return
 	}
+
+	h = HANDLE(r1)
+	err = nil
 	return
 }
